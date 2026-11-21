@@ -1,0 +1,78 @@
+{
+  "function": "check_fields",
+  "in": {
+    "result": {
+      "medicines": [
+        {
+          "id": "m1",
+          "name": "安壓平錠 5mg",
+          "dose_per_time": 1,
+          "frequency_per_day": 2,
+          "slots": [
+            "morning"
+          ],
+          "meal_timing": "after_meal",
+          "appearance": {
+            "text": "白色圓形錠",
+            "colour": "white",
+            "shape": "round"
+          },
+          "purpose": "",
+          "evidence": [
+            {
+              "field": "frequency_per_day",
+              "source": "text",
+              "snippet": "每日 2 次"
+            }
+          ],
+          "unclear_fields": [
+            "slots"
+          ]
+        }
+      ],
+      "engine": "tesseract",
+      "flags": [],
+      "raw_text": ""
+    }
+  },
+  "out": {
+    "medicines": [
+      {
+        "id": "m1",
+        "name": "安壓平錠 5mg",
+        "dose_per_time": 1,
+        "frequency_per_day": 2,
+        "slots": [
+          "morning"
+        ],
+        "meal_timing": "after_meal",
+        "appearance": {
+          "text": "白色圓形錠",
+          "colour": "white",
+          "shape": "round"
+        },
+        "purpose": "",
+        "evidence": [
+          {
+            "field": "frequency_per_day",
+            "source": "text",
+            "snippet": "每日 2 次"
+          }
+        ],
+        "unclear_fields": [
+          "slots"
+        ]
+      }
+    ],
+    "engine": "tesseract",
+    "flags": [
+      {
+        "medicine_id": "m1",
+        "field": "slots",
+        "code": "frequency_slots_mismatch",
+        "message": "每日 2 次 but 1 slot(s) ticked"
+      }
+    ],
+    "raw_text": ""
+  }
+}

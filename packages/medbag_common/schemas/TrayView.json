@@ -30,7 +30,7 @@
       "type": "object"
     }
   },
-  "description": "rectify (Joshua). None is returned instead when the markers are not all found.",
+  "description": "rectify (Joshua). rectify returns None instead when it cannot see all 4 markers\n(lid open, a marker covered, or a bad photo; FR-C-15). So a TrayView always means: lid closed.",
   "properties": {
     "cell_boxes": {
       "items": {
@@ -42,16 +42,11 @@
     "mm_per_px": {
       "title": "Mm Per Px",
       "type": "number"
-    },
-    "lid_closed": {
-      "title": "Lid Closed",
-      "type": "boolean"
     }
   },
   "required": [
     "cell_boxes",
-    "mm_per_px",
-    "lid_closed"
+    "mm_per_px"
   ],
   "title": "TrayView",
   "type": "object"

@@ -22,3 +22,9 @@ jobs:
           done
       - name: Each package's own tests
         run: uv run pytest -q
+      - name: schemas/ and examples/ are up to date
+        run: |
+          uv run python packages/medbag_common/export_schemas.py > /dev/null
+          uv run python packages/medbag_common/export_examples.py > /dev/null
+          git add -N packages/medbag_common/schemas packages/medbag_common/examples
+          git diff --exit-code packages/medbag_common/schemas packages/medbag_common/examples

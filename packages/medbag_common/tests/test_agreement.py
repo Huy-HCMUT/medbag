@@ -75,8 +75,10 @@ def test_label_pipeline():
     assert isinstance(label, T.PreparedLabel)
     if label.found and label.sharp:
         assert label.name_blurred
+        assert label.image.ndim == 3 and label.binary.ndim == 2  # colour for Gemini, black and white for Tesseract
+        assert set(np.unique(label.binary)) <= {0, 255}
         result = fn("read_label")(label, None)  # no Gemini -> Tesseract path
-        assert isinstance(result, T.LabelResult) and result.engine == "tesseract"
+        assert isinstance(result, T.LabelResult) and result.engine == "tesseract"  # never "none"
         checked = fn("check_fields")(result)
         assert isinstance(checked, T.LabelResult)
         T.LabelResult.model_validate_json(checked.model_dump_json())  # survives JSON
@@ -87,22 +89,27 @@ def test_tray_pipelines():
     if view is None:
         pytest.skip("markers not found on the sample photo")
     assert isinstance(view, T.TrayView) and len(view.cells) == 28 and len(view.cell_boxes) == 28
+    assert view.image.shape == (T.TRAY_H, T.TRAY_W, 3)  # 640 x 1120: 7 day columns x 4 slot rows
+    assert all(c.shape == (T.CELL_PX, T.CELL_PX, 3) for c in view.cells)
+    assert view.cell_boxes == [T.cell_box(c) for c in range(28)]
 
     pills = fn("detect_pills")(view, None)
     assert all(isinstance(p, T.Pill) and 0 <= p.cell < 28 for p in pills)
 
     fill = fn("match_fill")(view, pills, SCHEDULE, None)  # pipeline 2
-    assert isinstance(fill, T.FillResult)
+    assert isinstance(fill, T.TrayResult) and len(fill.cells) == 28
+    assert all(isinstance(r, T.RefToSave) for r in fill.refs_to_save)  # no files written, no paths
 
     matches = [fn("identify")(view, p, []) for p in pills if p.cell == DOSE.cell]
-    assert all(isinstance(m, T.Match) for m in matches)
+    assert all(isinstance(m, T.Match) and isinstance(m.fingerprint, T.Fingerprint) for m in matches)
     pre = fn("check_tray")(DOSE, matches, SCHEDULE)  # pipeline 3, before the dose
-    assert isinstance(pre, T.FillResult) and [c.cell for c in pre.cells] == [DOSE.cell]
+    assert isinstance(pre, T.TrayResult) and [c.cell for c in pre.cells] == [DOSE.cell]
 
     changed = fn("changed_cells")(view, view)  # pipeline 3, after the dose
     assert all(isinstance(c, int) and 0 <= c < 28 for c in changed)
     result = fn("check_dose")(DOSE, matches, [], changed, SCHEDULE)
     assert isinstance(result, T.CheckResult) and result.dose == DOSE
+    assert result.result != T.DoseResult.cannot_check  # only the server sets cannot_check
     T.CheckResult.model_validate_json(result.model_dump_json())
 
 

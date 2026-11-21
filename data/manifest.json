@@ -287,9 +287,28 @@
       "photo": "",
       "suggested_file": "test_set/dose/C8_lid_open.jpg",
       "expected": {
-        "lid_closed": false
+        "rectify": null,
+        "result": "cannot_check"
       },
       "demo": "none (FR-C-15)",
+      "priority": "Should"
+    },
+    {
+      "id": "C9",
+      "group": "dose",
+      "situation": "Lid opened and closed when no dose is open (e.g. 10:00): a compartment was touched.",
+      "endpoint": "/api/check",
+      "cell": 4,
+      "before": "B1",
+      "photo": "",
+      "suggested_file": "test_set/dose/C9_no_dose_open.jpg",
+      "expected": {
+        "changed_cells": [
+          "<cell id that was touched>"
+        ],
+        "family_alert": true
+      },
+      "demo": "none (SP6 'Dose open? No', FR-C-13)",
       "priority": "Should"
     }
   ],

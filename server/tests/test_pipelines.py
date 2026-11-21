@@ -28,7 +28,7 @@ def test_read_label():
 
 
 def test_fill_check():
-    assert isinstance(P.fill_check(PHOTO, SCHEDULE, None, MODELS), T.FillResult)
+    assert isinstance(P.fill_check(PHOTO, SCHEDULE, None, MODELS), T.TrayResult)
 
 
 def test_pre_dose_then_dose_check():
@@ -45,3 +45,23 @@ def test_dose_check_without_before_photo():
 def test_alerts_and_ask():
     assert P.alerts([], datetime(2026, 11, 23, 12, 50), T.Settings()) == []
     assert P.ask("Did I take my noon pills?", SCHEDULE, [], "en", MODELS).fallback
+
+
+def test_lid_closed_when_no_dose_is_open():
+    pre = P.pre_dose_check(PHOTO, DOSE, SCHEDULE, [], MODELS)
+    changed = P.lid_check(pre.view, PHOTO)
+    assert isinstance(changed, list) and all(0 <= c < 28 for c in changed)
+    assert P.lid_check(None, PHOTO) is None  # no before photo: cannot check
+
+
+def test_unreadable_label_is_marked_by_the_server(monkeypatch):
+    from medbag_common import fake_results
+
+    real = fake_results.preprocess_label
+
+    def blurred(img):
+        return real(img).model_copy(update={"sharp": False})
+
+    monkeypatch.setattr(fake_results, "preprocess_label", blurred)
+    result = P.read_label(PHOTO, MODELS)
+    assert result.engine == "none" and result.flags[0].code == "photo_unreadable"

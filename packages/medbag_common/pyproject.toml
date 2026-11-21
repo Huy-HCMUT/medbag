@@ -1,6 +1,6 @@
 [project]
 name = "medbag-common"
-version = "0.2.0"
+version = "0.3.0"
 description = "Shared types and method signatures for The Talking Medicine Bag (WBS 1.3)"
 requires-python = ">=3.11"
 dependencies = ["pydantic>=2.7", "numpy>=1.26"]

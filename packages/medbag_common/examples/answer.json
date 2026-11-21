@@ -1,0 +1,67 @@
+{
+  "function": "answer",
+  "in": {
+    "question": "Did I take my noon pills?",
+    "schedule": {
+      "medicines": [
+        {
+          "id": "m1",
+          "name": "安壓平錠 5mg",
+          "dose_per_time": 1,
+          "frequency_per_day": 2,
+          "slots": [
+            "morning",
+            "noon"
+          ],
+          "meal_timing": "after_meal",
+          "appearance": {
+            "text": "白色圓形錠",
+            "colour": "white",
+            "shape": "round"
+          },
+          "purpose": "",
+          "evidence": [
+            {
+              "field": "frequency_per_day",
+              "source": "text",
+              "snippet": "每日 2 次"
+            }
+          ],
+          "unclear_fields": []
+        }
+      ],
+      "cells": {
+        "0": [
+          {
+            "medicine_id": "m1",
+            "count": 1
+          }
+        ],
+        "1": [
+          {
+            "medicine_id": "m1",
+            "count": 1
+          }
+        ],
+        "...": "28 compartments in all"
+      },
+      "approved_by": "family",
+      "approved_at": "2026-11-23T09:00:00"
+    },
+    "log": [
+      {
+        "at": "2026-11-23T12:30:00",
+        "dose_id": "2026-11-23-noon",
+        "kind": "reminder",
+        "detail": {}
+      }
+    ],
+    "language": "en",
+    "gemini": null
+  },
+  "out": {
+    "text": "I cannot answer now, please ask your family.",
+    "language": "en",
+    "fallback": true
+  }
+}

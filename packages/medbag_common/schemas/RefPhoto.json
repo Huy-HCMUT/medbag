@@ -64,7 +64,7 @@
       "type": "object"
     }
   },
-  "description": "A saved reference photo (FR-P-10). The crop file lives in the photo folder.",
+  "description": "A saved reference photo (FR-P-10), read from the database by the server.\n\nThe server cuts the crop from the tray photo and saves the file after the family confirms.\nidentify only uses `fingerprint`; it never opens `path`.",
   "properties": {
     "medicine_id": {
       "title": "Medicine Id",

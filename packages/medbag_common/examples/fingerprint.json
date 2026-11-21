@@ -1,0 +1,50 @@
+{
+  "function": "fingerprint",
+  "in": {
+    "view": {
+      "image": "<image 640 x 1120 x 3>",
+      "cells": [
+        "<image 160 x 160 x 3>",
+        "... 28 images in all"
+      ],
+      "cell_boxes": [
+        {
+          "x": 0.0,
+          "y": 0.0,
+          "w": 160.0,
+          "h": 160.0
+        },
+        {
+          "x": 0.0,
+          "y": 160.0,
+          "w": 160.0,
+          "h": 160.0
+        },
+        "... 28 items in all"
+      ],
+      "mm_per_px": 0.25
+    },
+    "pill": {
+      "cell": 1,
+      "box": {
+        "x": 60.0,
+        "y": 220.0,
+        "w": 40.0,
+        "h": 40.0
+      },
+      "confidence": 0.95
+    },
+    "dino": null
+  },
+  "out": {
+    "colour_lab": [
+      95.0,
+      0.0,
+      2.0
+    ],
+    "length_mm": 8.0,
+    "width_mm": 8.0,
+    "shape": "round",
+    "embedding": null
+  }
+}

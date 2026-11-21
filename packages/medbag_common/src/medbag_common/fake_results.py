@@ -26,7 +26,6 @@ from .types import (
     DoseResult,
     Evidence,
     ExpectedPill,
-    FillResult,
     Fingerprint,
     Flag,
     LabelResult,
@@ -37,25 +36,32 @@ from .types import (
     Pill,
     PreparedLabel,
     RefPhoto,
+    RefToSave,
     Schedule,
     Settings,
     Slot,
+    TRAY_H,
+    TRAY_W,
+    TrayResult,
     TrayView,
+    cell_box,
 )
 
 # --- Joshua
 
 
 def preprocess_label(img: np.ndarray) -> PreparedLabel:
-    return PreparedLabel(image=img, found=True, sharp=True, name_blurred=True)
+    grey = img.mean(axis=2, keepdims=True).astype(np.uint8)
+    binary = np.where(grey > 127, 255, 0).astype(np.uint8)[:, :, 0]  # one channel, 0 or 255
+    return PreparedLabel(image=img, binary=binary, found=True, sharp=True, name_blurred=True)
 
 
 def rectify(img: np.ndarray) -> Optional[TrayView]:
-    h, w = 700, 400  # 7 rows (days) x 4 columns (slots), 100 px each
-    cells = [np.zeros((100, 100, 3), np.uint8) for _ in range(28)]
-    boxes = [Box(x=(c % 4) * 100, y=(c // 4) * 100, w=100, h=100) for c in range(28)]
-    return TrayView(image=np.zeros((h, w, 3), np.uint8), cells=cells, cell_boxes=boxes,
-                    mm_per_px=0.3, lid_closed=True)
+    # 7 day columns x 4 slot rows, 160 px each -> 1120 x 640 px, whatever the photo size
+    image = np.zeros((TRAY_H, TRAY_W, 3), np.uint8)
+    boxes = [cell_box(c) for c in range(28)]
+    cells = [image[int(b.y):int(b.y + b.h), int(b.x):int(b.x + b.w)] for b in boxes]
+    return TrayView(image=image, cells=cells, cell_boxes=boxes, mm_per_px=0.25)
 
 
 def changed_cells(before: TrayView, after: TrayView) -> list[CellId]:
@@ -110,7 +116,8 @@ def fingerprint(view: TrayView, pill: Pill, dino: Any = None) -> Fingerprint:
 
 
 def identify(view: TrayView, pill: Pill, refs: list[RefPhoto]) -> Match:
-    return Match(pill=pill, medicine_id="m1", score=0.92, certainty=Certainty.sure)
+    return Match(pill=pill, medicine_id="m1", score=0.92, certainty=Certainty.sure,
+                 fingerprint=fingerprint(view, pill))
 
 
 def _ok(cell: CellId, schedule: Schedule) -> CellStatus:
@@ -118,12 +125,17 @@ def _ok(cell: CellId, schedule: Schedule) -> CellStatus:
 
 
 def match_fill(view: TrayView, pills: list[Pill], schedule: Schedule,
-               refs: Optional[list[RefPhoto]] = None) -> FillResult:
-    return FillResult(cells=[_ok(c, schedule) for c in range(28)])
+               refs: Optional[list[RefPhoto]] = None) -> TrayResult:
+    first = next((p for p in pills if schedule.cells.get(p.cell)), None)
+    refs_to_save = [] if first is None else [
+        RefToSave(pill=first, medicine_id=schedule.cells[first.cell][0].medicine_id,
+                  fingerprint=fingerprint(view, first))]
+    return TrayResult(cells=[_ok(c, schedule) for c in range(28)], refs_to_save=refs_to_save)
 
 
-def check_tray(dose: DoseRef, matches: list[Match], schedule: Schedule) -> FillResult:
-    return FillResult(cells=[_ok(dose.cell, schedule)])
+def check_tray(dose: DoseRef, matches: list[Match], schedule: Schedule) -> TrayResult:
+    found = [m for m in matches if m.pill.cell == dose.cell]
+    return TrayResult(cells=[_ok(dose.cell, schedule).model_copy(update={"found": found})])
 
 
 def check_dose(dose: DoseRef, before: list[Match], after: list[Match], changed: list[CellId],

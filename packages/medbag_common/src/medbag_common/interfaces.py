@@ -11,8 +11,12 @@ Rules for every function:
 Each person's package exposes these exact names, e.g. `from prep import rectify`.
 server/src/medbag_server/pipelines.py shows the order in which the server calls them.
 
+Images: every photo is a numpy array, BGR, uint8 (what cv2.imread gives). The server has already
+turned it upright (phone EXIF rotation) and shrunk it (longest side 2000 px for labels, 1600 px for
+trays), so photo sizes still differ from phone to phone. After rectify the tray is always 1120 x 640 px.
+
 Coordinates: a Pill's box is in pixels of the straightened tray image (TrayView.image), and
-TrayView.cell_boxes says which compartment each region is. All photos are numpy BGR uint8.
+TrayView.cell_boxes says which compartment each region is (7 day columns x 4 slot rows, 160 px each).
 """
 
 from __future__ import annotations
@@ -28,7 +32,6 @@ from .types import (
     CellId,
     CheckResult,
     DoseRef,
-    FillResult,
     Fingerprint,
     LabelResult,
     LogEntry,
@@ -38,6 +41,7 @@ from .types import (
     RefPhoto,
     Schedule,
     Settings,
+    TrayResult,
     TrayView,
 )
 
@@ -48,17 +52,21 @@ class PreprocessLabel(Protocol):
     def __call__(self, img: np.ndarray) -> PreparedLabel:
         """Label photo -> cropped, straightened label with the patient name blurred.
 
-        Pipeline 1 (SP1). If no label is found or it is blurred, return found/sharp = False
-        (the image may be the input photo); the app then asks for a new photo.
+        Pipeline 1 (SP1). `image` is the colour label for Gemini; `binary` is the same label in
+        black and white with the noise removed, for Tesseract (one channel, 0 or 255).
+        If no label is found or it is blurred, return found/sharp = False (both images may be
+        the input photo); the server then asks for a new photo.
         """
 
 
 class Rectify(Protocol):
     def __call__(self, img: np.ndarray) -> Optional[TrayView]:
-        """Tray photo -> straightened TrayView with the 28 compartments, or None if a marker is missing.
+        """Tray photo (any size) -> straightened TrayView, always 1120 x 640 px, or None.
 
-        Pipelines 2 and 3 (SP3, SP4, SP6). Uses ArUco ids 0-3 on the tray sheet corners.
-        cells[i] and cell_boxes[i] are compartment i (cell = day * 4 + slot).
+        Pipelines 2 and 3 (SP3, SP4, SP6). Uses ArUco ids 0-3 on the tray sheet corners and warps
+        the tray to 7 day columns x 4 slot rows of 160 px. cells[i] and cell_boxes[i] are
+        compartment i (cell = day * 4 + slot; cell_boxes[i] == cell_box(i)).
+        None = not all 4 markers seen: lid open, a marker covered, or a bad photo (FR-C-15).
         """
 
 
@@ -77,11 +85,13 @@ class ReadLabel(Protocol):
     def __call__(self, label: PreparedLabel, gemini: Any) -> LabelResult:
         """Prepared label -> LabelResult (Gemini first, Tesseract chi_tra as fallback).
 
-        Pipeline 1 (SP1). `gemini` is the client the server made with its API key; it may be
-        None when there is no internet. Use Tesseract when it is None, fails or returns
-        something that is not the agreed JSON, and set engine = "tesseract" plus a
-        fallback_used flag. Fill missing slots from the frequency, never overwrite slots
-        read from ticks or icons.
+        Pipeline 1 (SP1). Only called when label.found and label.sharp. Gemini reads
+        label.image; Tesseract reads label.binary. `gemini` is the client the server made with
+        its API key; it may be None when there is no internet. Use Tesseract when it is None,
+        fails or returns something that is not the agreed JSON, and set engine = "tesseract"
+        plus a fallback_used flag. engine is always "gemini" or "tesseract" here ("none" is
+        set by the server). Fill missing slots from the frequency, never overwrite slots read
+        from ticks or icons.
         """
 
 
@@ -125,7 +135,8 @@ class FingerprintPill(Protocol):
     def __call__(self, view: TrayView, pill: Pill, dino: Any = None) -> Fingerprint:
         """One pill -> colour, size in mm and shape (optionally a DINOv2 embedding).
 
-        Used inside identify and match_fill; the server does not call it.
+        Used inside identify and match_fill, which put it into Match.fingerprint and
+        RefToSave.fingerprint; the server does not call it.
         """
 
 
@@ -133,7 +144,9 @@ class Identify(Protocol):
     def __call__(self, view: TrayView, pill: Pill, refs: list[RefPhoto]) -> Match:
         """One pill -> which medicine it is, with sure, unsure or no_match.
 
-        Pipeline 3 (SP4, SP6). Compares the pill's fingerprint with her reference photos.
+        Pipeline 3 (SP4, SP6). Compares the pill's fingerprint with the fingerprints in `refs`
+        (never opens RefPhoto.path) and returns that fingerprint in Match.fingerprint, so the
+        server can save the pill as a new reference when the family confirms an unsure one (SP9).
         """
 
 
@@ -144,18 +157,19 @@ class MatchFill(Protocol):
         pills: list[Pill],
         schedule: Schedule,
         refs: Optional[list[RefPhoto]] = None,
-    ) -> FillResult:
+    ) -> TrayResult:
         """Fill check of all 28 compartments right after filling (Pipeline 2, SP3).
 
-        There are no reference photos yet on the first fill, so it compares with the schedule
-        and the label's appearance (and with refs on a refill), compares the same medicine
-        across days, warns about look-alikes and fills refs_to_save. Nothing is saved until
-        the family confirms the grid.
+        There are no reference photos yet on the first fill (refs = None), so it compares with
+        the schedule and the label's appearance (and with refs on a refill), compares the same
+        medicine across days and warns about look-alikes. refs_to_save lists one good pill per
+        medicine (pill + medicine id + fingerprint); it writes no files. The server cuts the
+        crops and saves them only after the family confirms the grid.
         """
 
 
 class CheckTray(Protocol):
-    def __call__(self, dose: DoseRef, matches: list[Match], schedule: Schedule) -> FillResult:
+    def __call__(self, dose: DoseRef, matches: list[Match], schedule: Schedule) -> TrayResult:
         """Pre-dose check of the due compartment, lid closed (Pipeline 3 before the dose, SP4).
 
         `matches` = identify() for every pill in dose.cell. Returns one CellStatus for
@@ -178,6 +192,8 @@ class CheckDose(Protocol):
         `before` / `after` = identify() for every pill in the changed compartments, in the
         before and after photos. taken = before minus after in dose.cell. Any changed cell
         other than dose.cell goes into other_changed_cells. An unsure pill gives result = unsure.
+        result is never cannot_check: the server sets that itself when a photo has no markers.
+        A lid opened and closed when no dose is open is also the server's job (changed_cells only).
         """
 
 
