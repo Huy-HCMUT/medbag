@@ -234,7 +234,8 @@
     "engine": {
       "enum": [
         "gemini",
-        "tesseract"
+        "tesseract",
+        "none"
       ],
       "title": "Engine",
       "type": "string"

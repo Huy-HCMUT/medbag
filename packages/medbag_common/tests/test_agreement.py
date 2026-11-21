@@ -1,9 +1,10 @@
-"""Contract tests: every method returns the agreed type.
+"""Agreement tests: every function has the agreed name, parameters and return type (WBS 1.3).
 
-Run against the stubs:      uv run pytest packages/medbag_common/tests
-Run against real code:      MEDBAG_IMPL=prep uv run pytest packages/medbag_common/tests -k rectify
-(MEDBAG_IMPL names the module that holds the real functions; missing ones are skipped.)
-Put two sample photos in data/contract/: label.jpg and tray.jpg. Until then, blank images are used.
+Run against the fake results:  uv run pytest packages/medbag_common/tests
+Run against your real code:    MEDBAG_IMPL=prep uv run pytest packages/medbag_common/tests
+(MEDBAG_IMPL = your package name.) Your real functions are used; everyone else's are the fake
+results, so you can test your part before the others are ready.
+Put two sample photos in data/test_samples/: label.jpg and tray.jpg. Until then, blank images are used.
 """
 
 from __future__ import annotations
@@ -17,10 +18,11 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from medbag_common import interfaces, types as T
+from medbag_common import fake_results, interfaces, types as T
 
-IMPL = importlib.import_module(os.environ.get("MEDBAG_IMPL", "medbag_common.stubs"))
-DATA = Path(os.environ.get("MEDBAG_DATA", "data/contract"))
+IMPL = importlib.import_module(os.environ.get("MEDBAG_IMPL", "medbag_common.fake_results"))
+REPO = Path(__file__).resolve().parents[3]
+DATA = Path(os.environ.get("MEDBAG_DATA", REPO / "data" / "test_samples"))
 
 
 def photo(name: str, shape=(1200, 900, 3)) -> np.ndarray:
@@ -33,16 +35,12 @@ def photo(name: str, shape=(1200, 900, 3)) -> np.ndarray:
 
 
 def fn(name: str):
-    f = getattr(IMPL, name, None)
-    if f is None:
-        pytest.skip(f"{IMPL.__name__} has no {name}")
-    return f
+    """Your real function if your package has it, otherwise the fake result."""
+    return getattr(IMPL, name, None) or getattr(fake_results, name)
 
 
-SCHEDULE = T.Schedule(
-    medicines=[T.Medicine(id="m1", name="安壓平錠 5mg", dose_per_time=1, frequency_per_day=1,
-                          slots=[T.Slot.noon])],
-    cells={c: [T.ExpectedPill(medicine_id="m1", count=1)] for c in range(1, 28, 4)},
+SCHEDULE = T.make_schedule(
+    [T.Medicine(id="m1", name="安壓平錠 5mg", dose_per_time=1, frequency_per_day=1, slots=[T.Slot.noon])],
     approved_by="family", approved_at=datetime(2026, 11, 23, 9, 0),
 )
 DOSE = T.DoseRef(dose_id="2026-11-23-noon", cell=1, slot=T.Slot.noon, due_at=datetime(2026, 11, 23, 12, 30))
@@ -60,9 +58,16 @@ SIGNATURES = {
 
 @pytest.mark.parametrize("name", SIGNATURES)
 def test_signature(name):
-    f = fn(name)
+    f = getattr(IMPL, name, None)
+    if f is None:
+        pytest.skip(f"{IMPL.__name__} does not own {name}")
     want = list(inspect.signature(SIGNATURES[name].__call__).parameters)[1:]  # drop self
-    assert list(inspect.signature(f).parameters) == want
+    assert list(inspect.signature(f).parameters) == want, f"{name}: parameters must be {want}"
+
+
+def test_schedule_helper():
+    assert [e.medicine_id for e in SCHEDULE.cells[DOSE.cell]] == ["m1"]
+    assert sum(len(v) for v in SCHEDULE.cells.values()) == 7  # noon on 7 days
 
 
 def test_label_pipeline():
@@ -77,23 +82,28 @@ def test_label_pipeline():
         T.LabelResult.model_validate_json(checked.model_dump_json())  # survives JSON
 
 
-def test_tray_pipeline():
+def test_tray_pipelines():
     view = fn("rectify")(photo("tray.jpg"))
     if view is None:
         pytest.skip("markers not found on the sample photo")
     assert isinstance(view, T.TrayView) and len(view.cells) == 28 and len(view.cell_boxes) == 28
-    pills = fn("detect_pills")(view.cells[1], 1, None)
-    assert all(isinstance(p, T.Pill) and p.cell == 1 for p in pills)
-    matches = [fn("identify")(view.cells[1], p, view.mm_per_px, []) for p in pills]
-    assert all(isinstance(m, T.Match) for m in matches)
-    fill = fn("match_fill")(view, {1: pills}, SCHEDULE, None)
+
+    pills = fn("detect_pills")(view, None)
+    assert all(isinstance(p, T.Pill) and 0 <= p.cell < 28 for p in pills)
+
+    fill = fn("match_fill")(view, pills, SCHEDULE, None)  # pipeline 2
     assert isinstance(fill, T.FillResult)
-    pre = fn("check_tray")(view, pills, DOSE, SCHEDULE, [])
+
+    matches = [fn("identify")(view, p, []) for p in pills if p.cell == DOSE.cell]
+    assert all(isinstance(m, T.Match) for m in matches)
+    pre = fn("check_tray")(DOSE, matches, SCHEDULE)  # pipeline 3, before the dose
     assert isinstance(pre, T.FillResult) and [c.cell for c in pre.cells] == [DOSE.cell]
-    changed = fn("changed_cells")(view, view)
+
+    changed = fn("changed_cells")(view, view)  # pipeline 3, after the dose
     assert all(isinstance(c, int) and 0 <= c < 28 for c in changed)
-    result = fn("check_dose")(DOSE, {1: matches}, {1: []}, changed, SCHEDULE)
+    result = fn("check_dose")(DOSE, matches, [], changed, SCHEDULE)
     assert isinstance(result, T.CheckResult) and result.dose == DOSE
+    T.CheckResult.model_validate_json(result.model_dump_json())
 
 
 def test_alert_rules():

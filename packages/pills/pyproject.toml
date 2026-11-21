@@ -1,7 +1,7 @@
 [project]
 name = "pills"
 version = "0.1.0"
-description = "Pill detection with YOLO26n; voice questions (WBS 4.3, 4.11). Owner: 鄂弘 Alex"
+description = "Pill detection with YOLO26n on the straightened tray (WBS 4.3). Owner: 鄂弘 Alex"
 requires-python = ">=3.11"
 dependencies = ["medbag-common"]
 

@@ -8,6 +8,7 @@ dependencies = [
     "prep",
     "label",
     "pills",
+    "voice",
     "check",
     "fastapi>=0.115",
     "uvicorn[standard]>=0.30",
@@ -20,6 +21,7 @@ medbag-common = { workspace = true }
 prep = { workspace = true }
 label = { workspace = true }
 pills = { workspace = true }
+voice = { workspace = true }
 check = { workspace = true }
 
 [build-system]

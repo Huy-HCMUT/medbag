@@ -122,7 +122,7 @@ class LabelResult(BaseModel):
     """read_label and check_fields (Sam)."""
 
     medicines: list[Medicine] = []
-    engine: Literal["gemini", "tesseract"]
+    engine: Literal["gemini", "tesseract", "none"]  # "none" = the photo could not be read
     flags: list[Flag] = []
     raw_text: str = ""  # Tesseract text, or Gemini's transcription
 
@@ -158,10 +158,10 @@ class TrayView(ImageModel):
 
 
 class Pill(BaseModel):
-    """detect_pills (Alex): one pill found in one compartment crop."""
+    """detect_pills (Alex): one pill on the straightened tray, with its compartment."""
 
     cell: CellId
-    box: Box  # in the compartment crop
+    box: Box  # in pixels of TrayView.image (the straightened tray)
     confidence: float
 
 
@@ -307,3 +307,20 @@ class Answer(BaseModel):
     text: str
     language: Literal["zh-TW", "en"]
     fallback: bool = False  # True = scripted "please ask your family" line
+
+
+# --------------------------------------------------------------------------- helpers
+
+
+def make_schedule(medicines: list[Medicine], approved_by: str, approved_at: datetime) -> Schedule:
+    """Approved medicines -> Schedule with what each of the 28 compartments should hold.
+
+    Every medicine goes into its slots on all 7 days, dose_per_time pills each (1 if unknown).
+    The server calls this when the family taps Approve; tests can use it to build a schedule.
+    """
+    cells: dict[CellId, list[ExpectedPill]] = {c: [] for c in range(28)}
+    for m in medicines:
+        for slot in m.slots:
+            for day in range(7):
+                cells[cell_id(day, slot)].append(ExpectedPill(medicine_id=m.id, count=m.dose_per_time or 1))
+    return Schedule(medicines=medicines, cells=cells, approved_by=approved_by, approved_at=approved_at)

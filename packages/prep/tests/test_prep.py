@@ -1,4 +1,4 @@
-"""Your own tests for prep (contract tests live in packages/medbag_common/tests)."""
+"""Your own tests for prep (agreement tests live in packages/medbag_common/tests)."""
 
 import prep
 

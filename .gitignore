@@ -7,10 +7,10 @@ __pycache__/
 # secrets: never commit
 .env
 
-# data lives on Google Drive (2 Data/); only small contract samples are committed
+# data lives on Google Drive (2 Data/); only the small test samples are committed
 data/*
 !data/README.md
-!data/contract/
+!data/test_samples/
 !data/manifest.json
 
 # models live on Google Drive (3 Models/)

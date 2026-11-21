@@ -1,4 +1,4 @@
-"""Your own tests for check (contract tests live in packages/medbag_common/tests)."""
+"""Your own tests for check (agreement tests live in packages/medbag_common/tests)."""
 
 import check
 

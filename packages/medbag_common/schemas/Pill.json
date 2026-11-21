@@ -30,7 +30,7 @@
       "type": "object"
     }
   },
-  "description": "detect_pills (Alex): one pill found in one compartment crop.",
+  "description": "detect_pills (Alex): one pill on the straightened tray, with its compartment.",
   "properties": {
     "cell": {
       "title": "Cell",

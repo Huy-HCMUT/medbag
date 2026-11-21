@@ -1,15 +1,18 @@
-"""The methods each owner delivers (WBS 1.3, interface agreement).
+"""The functions each person delivers: the interface agreement (WBS 1.3).
 
-Rules for every method:
+Rules for every function:
   - Take data, return one of the models in medbag_common.types. No file paths, no printing,
     no global state.
   - Models and clients (YOLO26n, DINOv2, Gemini) are loaded once by the server and passed in.
   - Never raise for a bad photo: return the "could not" value written in each docstring.
   - Holding a compartment, clearing a hold and sending alerts are the server's decisions;
-    the methods only return results.
+    the functions only return results.
 
-Each owner's package exposes these exact names, e.g. `from prep import rectify`.
-The server's pipelines.py calls them in the order shown in the Demo Flow diagram.
+Each person's package exposes these exact names, e.g. `from prep import rectify`.
+server/src/medbag_server/pipelines.py shows the order in which the server calls them.
+
+Coordinates: a Pill's box is in pixels of the straightened tray image (TrayView.image), and
+TrayView.cell_boxes says which compartment each region is. All photos are numpy BGR uint8.
 """
 
 from __future__ import annotations
@@ -20,6 +23,7 @@ from typing import Any, Optional, Protocol
 import numpy as np
 
 from .types import (
+    Action,
     Answer,
     CellId,
     CheckResult,
@@ -29,7 +33,6 @@ from .types import (
     LabelResult,
     LogEntry,
     Match,
-    Action,
     Pill,
     PreparedLabel,
     RefPhoto,
@@ -52,9 +55,10 @@ class PreprocessLabel(Protocol):
 
 class Rectify(Protocol):
     def __call__(self, img: np.ndarray) -> Optional[TrayView]:
-        """Tray photo -> TrayView with 28 compartment crops, or None if any marker is missing.
+        """Tray photo -> straightened TrayView with the 28 compartments, or None if a marker is missing.
 
         Pipelines 2 and 3 (SP3, SP4, SP6). Uses ArUco ids 0-3 on the tray sheet corners.
+        cells[i] and cell_boxes[i] are compartment i (cell = day * 4 + slot).
         """
 
 
@@ -62,7 +66,7 @@ class ChangedCells(Protocol):
     def __call__(self, before: TrayView, after: TrayView) -> list[CellId]:
         """Compartments that changed between two straightened photos.
 
-        Pipeline 3 bottom row (SP6). Ignores small shifts in position and light (FR-C-13).
+        Pipeline 3 after the dose (SP6). Ignores small shifts in position and light (FR-C-13).
         """
 
 
@@ -94,10 +98,12 @@ class CheckFields(Protocol):
 
 
 class DetectPills(Protocol):
-    def __call__(self, cell_img: np.ndarray, cell: CellId, model: Any) -> list[Pill]:
-        """One compartment crop -> the pills in it (YOLO26n, one class: pill).
+    def __call__(self, view: TrayView, model: Any) -> list[Pill]:
+        """Straightened tray -> every pill on it, each with its compartment (YOLO26n, one class).
 
-        Pipelines 2 and 3. `model` is the YOLO26n model the server loaded at start-up.
+        Pipelines 2 and 3. Runs once on view.image (the same kind of picture as the training
+        annotations in WBS 2.5) and gives each pill the compartment whose cell_box holds the
+        box centre. `model` is the YOLO26n model the server loaded at start-up.
         """
 
 
@@ -116,15 +122,16 @@ class AnswerQuestion(Protocol):
 
 
 class FingerprintPill(Protocol):
-    def __call__(self, crop: np.ndarray, mm_per_px: float, dino: Any = None) -> Fingerprint:
-        """Pill crop -> colour, size in mm and shape (optionally DINOv2 embedding)."""
+    def __call__(self, view: TrayView, pill: Pill, dino: Any = None) -> Fingerprint:
+        """One pill -> colour, size in mm and shape (optionally a DINOv2 embedding).
+
+        Used inside identify and match_fill; the server does not call it.
+        """
 
 
 class Identify(Protocol):
-    def __call__(
-        self, cell_img: np.ndarray, pill: Pill, mm_per_px: float, refs: list[RefPhoto]
-    ) -> Match:
-        """One detected pill -> which medicine, with sure, unsure or no_match.
+    def __call__(self, view: TrayView, pill: Pill, refs: list[RefPhoto]) -> Match:
+        """One pill -> which medicine it is, with sure, unsure or no_match.
 
         Pipeline 3 (SP4, SP6). Compares the pill's fingerprint with her reference photos.
         """
@@ -134,26 +141,26 @@ class MatchFill(Protocol):
     def __call__(
         self,
         view: TrayView,
-        pills: dict[CellId, list[Pill]],
+        pills: list[Pill],
         schedule: Schedule,
         refs: Optional[list[RefPhoto]] = None,
     ) -> FillResult:
-        """Fill check of all 28 compartments (Pipeline 2, SP3).
+        """Fill check of all 28 compartments right after filling (Pipeline 2, SP3).
 
-        Compares with the schedule and the label's appearance (and with refs on refills),
-        compares the same medicine across days, warns about look-alikes and fills
-        refs_to_save. Nothing is saved until the family confirms the grid.
+        There are no reference photos yet on the first fill, so it compares with the schedule
+        and the label's appearance (and with refs on a refill), compares the same medicine
+        across days, warns about look-alikes and fills refs_to_save. Nothing is saved until
+        the family confirms the grid.
         """
 
 
 class CheckTray(Protocol):
-    def __call__(
-        self, view: TrayView, pills: list[Pill], dose: DoseRef, schedule: Schedule, refs: list[RefPhoto]
-    ) -> FillResult:
-        """Pre-dose check of the due compartment, lid closed (Pipeline 3 top row, SP4).
+    def __call__(self, dose: DoseRef, matches: list[Match], schedule: Schedule) -> FillResult:
+        """Pre-dose check of the due compartment, lid closed (Pipeline 3 before the dose, SP4).
 
-        Returns one CellStatus for dose.cell: ok, wrong, missing, extra, unsure or empty.
-        The server puts the dose on hold for wrong, extra, unsure or empty.
+        `matches` = identify() for every pill in dose.cell. Returns one CellStatus for
+        dose.cell: ok, wrong, missing, extra, unsure or empty. The server holds the dose for
+        wrong, extra, unsure or empty.
         """
 
 
@@ -161,23 +168,22 @@ class CheckDose(Protocol):
     def __call__(
         self,
         dose: DoseRef,
-        before: dict[CellId, list[Match]],
-        after: dict[CellId, list[Match]],
+        before: list[Match],
+        after: list[Match],
         changed: list[CellId],
         schedule: Schedule,
     ) -> CheckResult:
-        """Dose check after the lid closes (Pipeline 3 bottom row, SP6).
+        """Dose check after the lid closes (Pipeline 3 after the dose, SP6).
 
-        taken = before minus after in the due compartment. Any changed cell other than
-        dose.cell goes into other_changed_cells. An unsure pill gives result = unsure.
+        `before` / `after` = identify() for every pill in the changed compartments, in the
+        before and after photos. taken = before minus after in dose.cell. Any changed cell
+        other than dose.cell goes into other_changed_cells. An unsure pill gives result = unsure.
         """
 
 
 class AlertRules(Protocol):
-    def __call__(
-        self, log: list[LogEntry], sim_time: datetime, settings: Settings
-    ) -> list[Action]:
-        """Dose log and the simulator's time -> what to do now (Pipeline 4, SP7).
+    def __call__(self, log: list[LogEntry], sim_time: datetime, settings: Settings) -> list[Action]:
+        """Dose log and the simulator's time -> what the server should do now (Pipeline 4, SP7).
 
         Second reminder after 15 min, family alert after 30 min, wrong pill not put back
         after 2 min, missed at the next dose time. Nothing while a dose is on hold.
