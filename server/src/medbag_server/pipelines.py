@@ -1,10 +1,11 @@
 """The order in which the server calls everyone's functions (one function per pipeline).
 
+This is where the pieces fit together. Endpoints in main.py call these. Each function comes straight
+from its owner's package; until the owner writes the real code, it returns its fake result.
 Photos reach these functions through images.load_photo (upright, BGR, shrunk), never straight
-from the upload. This is where the pieces fit together. Endpoints in main.py call these; each step uses the
-real function or its fake result, as set in config.USE_REAL (see pick_method.py).
+from the upload.
 
-  1 read_label      POST /api/ocr      preprocess_label -> read_label -> check_fields
+  1 label_check     POST /api/ocr      preprocess_label -> read_label -> check_fields
   2 fill_check      POST /api/tray     rectify -> detect_pills -> match_fill
   3 pre_dose_check  POST /api/tray     rectify -> detect_pills -> identify -> check_tray
     dose_check      POST /api/check    rectify -> changed_cells -> detect_pills -> identify -> check_dose
@@ -38,8 +39,11 @@ from medbag_common.types import (
 )
 
 from medbag_common.types import CellId
-
-from .pick_method import get
+from check import alert_rules, check_dose, check_tray, identify, match_fill
+from label import check_fields, read_label
+from pills import detect_pills
+from prep import changed_cells, preprocess_label, rectify
+from voice import answer
 
 HOLD_STATES = {CellState.wrong, CellState.extra, CellState.unsure, CellState.empty}  # FR-C-02
 
@@ -63,14 +67,14 @@ class PreDoseOutcome:
 # 1 ------------------------------------------------------------------------------------------
 
 
-def read_label(photo: np.ndarray, models: Models) -> LabelResult:
-    label = get("preprocess_label")(photo)
+def label_check(photo: np.ndarray, models: Models) -> LabelResult:
+    label = preprocess_label(photo)
     if not (label.found and label.sharp):
         # set here, not by read_label: the photo never reaches Sam's code
         return LabelResult(engine="none", flags=[Flag(code="photo_unreadable",
                                                       message="No sharp label found. Please take a new photo.")])
-    result = get("read_label")(label, models.gemini)
-    return get("check_fields")(result)
+    result = read_label(label, models.gemini)
+    return check_fields(result)
 
 
 # 2 ------------------------------------------------------------------------------------------
@@ -82,37 +86,37 @@ def fill_check(photo: np.ndarray, schedule: Schedule, refs: Optional[list[RefPho
     After the family confirms the grid, the server cuts each result.refs_to_save[i].pill.box
     out of the straightened tray and saves it with its fingerprint as a RefPhoto (FR-P-10).
     """
-    view = get("rectify")(photo)
+    view = rectify(photo)
     if view is None:
         return None
-    pills = get("detect_pills")(view, models.yolo)
-    return get("match_fill")(view, pills, schedule, refs)
+    pills = detect_pills(view, models.yolo)
+    return match_fill(view, pills, schedule, refs)
 
 
 # 3 ------------------------------------------------------------------------------------------
 
 
 def pre_dose_check(photo: np.ndarray, dose: DoseRef, schedule: Schedule, refs: list[RefPhoto], models: Models) -> PreDoseOutcome:
-    view = get("rectify")(photo)
+    view = rectify(photo)
     if view is None:
         return PreDoseOutcome(view=None, result=None, hold=False)
-    pills = [p for p in get("detect_pills")(view, models.yolo) if p.cell == dose.cell]
-    matches = [get("identify")(view, p, refs) for p in pills]
-    result = get("check_tray")(dose, matches, schedule)
+    pills = [p for p in detect_pills(view, models.yolo) if p.cell == dose.cell]
+    matches = [identify(view, p, refs) for p in pills]
+    result = check_tray(dose, matches, schedule)
     return PreDoseOutcome(view=view, result=result, hold=result.cells[0].state in HOLD_STATES)
 
 
 def dose_check(before: Optional[TrayView], after_photo: np.ndarray, dose: DoseRef, schedule: Schedule,
                refs: list[RefPhoto], models: Models) -> CheckResult:
     """`before` = the view kept from pre_dose_check (or the last good one)."""
-    after = get("rectify")(after_photo)
+    after = rectify(after_photo)
     if before is None or after is None:  # set here, never by check_dose
         return CheckResult(dose=dose, result=DoseResult.cannot_check, message_key="cannot_check")
-    changed = get("changed_cells")(before, after)
+    changed = changed_cells(before, after)
     cells = set(changed) | {dose.cell}
-    before_m = [get("identify")(before, p, refs) for p in get("detect_pills")(before, models.yolo) if p.cell in cells]
-    after_m = [get("identify")(after, p, refs) for p in get("detect_pills")(after, models.yolo) if p.cell in cells]
-    return get("check_dose")(dose, before_m, after_m, changed, schedule)
+    before_m = [identify(before, p, refs) for p in detect_pills(before, models.yolo) if p.cell in cells]
+    after_m = [identify(after, p, refs) for p in detect_pills(after, models.yolo) if p.cell in cells]
+    return check_dose(dose, before_m, after_m, changed, schedule)
 
 
 def lid_check(before: Optional[TrayView], after_photo: np.ndarray) -> Optional[list[CellId]]:
@@ -121,18 +125,18 @@ def lid_check(before: Optional[TrayView], after_photo: np.ndarray) -> Optional[l
     Returns the compartments that changed (any change -> alert the family), or None when either
     photo has no markers (cannot check). check_dose is not called: there is no dose to check.
     """
-    after = get("rectify")(after_photo)
+    after = rectify(after_photo)
     if before is None or after is None:
         return None
-    return get("changed_cells")(before, after)
+    return changed_cells(before, after)
 
 
 # 4, 5 ---------------------------------------------------------------------------------------
 
 
 def alerts(log: list[LogEntry], sim_time: datetime, settings: Settings) -> list[Action]:
-    return get("alert_rules")(log, sim_time, settings)
+    return alert_rules(log, sim_time, settings)
 
 
 def ask(question: str, schedule: Schedule, log: list[LogEntry], language: str, models: Models) -> Answer:
-    return get("answer")(question, schedule, log, language, models.gemini)
+    return answer(question, schedule, log, language, models.gemini)

@@ -1,8 +1,20 @@
 # medbag_common · interface agreement (WBS 1.3)
 
-Shared data types and the exact function signatures for The Talking Medicine Bag.
+Shared data types and the exact function signatures for The Talking Medicine Bag: **the rulebook everyone follows**.
 Draft v0.3 by Huy, 2026-11-22. **Please comment by Sun Nov 22, 9 pm**; after that the names and fields are frozen
 and changes go through Huy.
+
+> **This folder is not where your code goes.** Your code goes in your own function files, e.g.
+> `packages/prep/src/prep/rectify.py`. From here you only read the table below and import the types:
+> `from medbag_common.types import TrayView, Pill`. Only Huy edits this folder.
+
+| You need | Look at |
+|---|---|
+| What goes in and what comes out of your function | the table below, and `examples/<your function>.json` |
+| The fields of a type (`Pill`, `TrayView`, `Match`, ...) | `src/medbag_common/types.py` |
+
+The other files are for Huy: `interfaces.py` (the exact signatures), `fake_results.py` (the fake answers),
+`agreement.py` (the check every package runs), `export_examples.py` (rebuilds `examples/`).
 
 ## What each person delivers
 
@@ -52,18 +64,17 @@ array (BGR, uint8, size shown as height × width × 3); everything else is numbe
 - A bad photo is not an exception: return the "could not" value (`found=False` or `sharp=False`, `None` from `rectify`).
 - Holding a compartment, clearing a hold, saving photos and sending alerts are the server's decisions. Functions only return results.
 
-## Try it
+## Test
 
 ```bash
-uv sync
-uv run pytest packages/medbag_common/tests                    # against the fake results
-MEDBAG_IMPL=prep uv run pytest packages/medbag_common/tests   # your real functions + everyone else's fake results
+uv run pytest packages/prep      # your package (prep, label, pills, voice or check)
 ```
 
-`fake_results.py` holds fixed answers with the same signatures; the server uses them until each real function
-passes its agreement test (`tests/test_agreement.py`). `schemas/` has a JSON Schema per type and `examples/` one input and output per function, for anyone who prefers JSON.
-After changing `types.py` or `fake_results.py`, run `uv run python packages/medbag_common/export_schemas.py` and
-`uv run python packages/medbag_common/export_examples.py`; CI fails if they are out of date.
+Each package's test calls `check_package("<package>")` from `agreement.py`: your functions plus everyone else's fake
+answers, every pipeline, every name, parameter and output. The message says what does not fit.
+
+For Huy: after changing `types.py` or `fake_results.py`, run `uv run python packages/medbag_common/export_examples.py`;
+the tests on GitHub fail if `examples/` is out of date.
 
 ## Changes
 
@@ -73,6 +84,8 @@ After changing `types.py` or `fake_results.py`, run `uv run python packages/medb
   `refs_to_save` is now a list of `RefToSave` (pill, medicine id, fingerprint): `match_fill` writes no files. `Match` carries
   the pill's `fingerprint`, so a confirmed unsure pill can become a reference. `engine = none` and `cannot_check` are set by the
   server only. New: server `lid_check` (lid closed when no dose is open), `images.load_photo`, `examples/`.
+  Simpler for everyone: one ready file per function in each package, one test command (`uv run pytest packages/<name>`),
+  no `MEDBAG_IMPL`, no `USE_REAL` switch, no `schemas/`.
 - **v0.2 (Nov 22):** `detect_pills` runs once on the whole straightened tray (the YOLO annotations in WBS 2.5 are on
   whole-tray photos). `identify` and `fingerprint` take the `TrayView` and a `Pill`. `check_tray` and `check_dose` take
   `Match` lists from `identify`. `match_fill` takes a plain list of pills. New helper `make_schedule`; the label engine can be `none`.

@@ -1,8 +1,8 @@
 """Fake results: every agreed function, returning a fixed answer of the right shape.
 
-The server uses these until each person's real function is ready, so the web app and the
-simulator can be built now. In server/.../config.py, USE_REAL["rectify"] = True switches one
-function to the real code once it passes the agreement test.
+Each function file in prep, label, pills, voice and check returns these until its owner writes the
+real code, so the server, the web app and the simulator already run. The agreement check
+(agreement.py) also uses them for everyone else's functions while it tests yours.
 """
 
 from __future__ import annotations

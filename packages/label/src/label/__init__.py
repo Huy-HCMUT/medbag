@@ -1,14 +1,10 @@
-"""Label reading: Gemini with Tesseract fallback, field rule checks (WBS 3.3-3.5).
+"""label (Sam): one file per function. Open the file and write your code there.
 
-Owner: 王有財 Sam. Signatures: packages/medbag_common/src/medbag_common/interfaces.py
-
-For now every function below is a fake result from medbag_common.fake_results, so the server already works.
-Replace them one by one with your real code (a file per function is fine, e.g. read_label.py),
-keep the exact names and parameters, and run:
-    MEDBAG_IMPL=label uv run pytest packages/medbag_common/tests   # agreement test
-Add the libraries you need with:  uv add --package label google-genai pytesseract
+Test your package:  uv run pytest packages/label
+Add a library:      uv add --package label google-genai pytesseract
 """
 
-from medbag_common.fake_results import read_label, check_fields  # TODO: replace with real code
+from .read_label import read_label
+from .check_fields import check_fields
 
 __all__ = ['read_label', 'check_fields']

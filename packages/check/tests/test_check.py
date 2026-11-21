@@ -1,8 +1,11 @@
-"""Your own tests for check (agreement tests live in packages/medbag_common/tests)."""
+"""Tests for check. Run:  uv run pytest packages/check"""
 
-import check
+from medbag_common.agreement import check_package
 
 
-def test_exports():
-    for fn in ['fingerprint', 'identify', 'match_fill', 'check_tray', 'check_dose', 'alert_rules']:
-        assert callable(getattr(check, fn))
+def test_follows_the_rulebook():
+    """Your functions have the agreed names, parameters and outputs, and fit with everyone else's."""
+    check_package("check")
+
+
+# Add your own tests below, e.g. run your function on photos from data/test_set/ and check the result.

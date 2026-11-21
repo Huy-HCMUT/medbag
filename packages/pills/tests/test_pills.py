@@ -1,8 +1,11 @@
-"""Your own tests for pills (agreement tests live in packages/medbag_common/tests)."""
+"""Tests for pills. Run:  uv run pytest packages/pills"""
 
-import pills
+from medbag_common.agreement import check_package
 
 
-def test_exports():
-    for fn in ['detect_pills']:
-        assert callable(getattr(pills, fn))
+def test_follows_the_rulebook():
+    """Your functions have the agreed names, parameters and outputs, and fit with everyone else's."""
+    check_package("pills")
+
+
+# Add your own tests below, e.g. run your function on photos from data/test_set/ and check the result.
