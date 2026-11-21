@@ -13,7 +13,7 @@ from fastapi.staticfiles import StaticFiles
 from medbag_common.types import Settings
 
 from . import db
-from .config import GEMINI_API_KEY, USE_REAL
+from .config import GEMINI_API_KEY
 from .pipelines import Models
 
 WEB = Path(__file__).resolve().parents[2] / "web"
@@ -32,7 +32,7 @@ app = FastAPI(title="The Talking Medicine Bag", lifespan=lifespan)
 
 @app.get("/api/health")
 def health():
-    return {"ok": True, "gemini_key": bool(GEMINI_API_KEY), "real_methods": [k for k, v in USE_REAL.items() if v]}
+    return {"ok": True, "gemini_key": bool(GEMINI_API_KEY)}
 
 
 @app.get("/api/settings")

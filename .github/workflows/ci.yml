@@ -14,17 +14,10 @@ jobs:
         with:
           enable-cache: true
       - run: uv sync --locked
-      - name: Agreement tests, once per owner package
-        run: |
-          for impl in medbag_common.fake_results prep label pills voice check; do
-            echo "== $impl"
-            MEDBAG_IMPL=$impl uv run pytest -q packages/medbag_common/tests
-          done
-      - name: Each package's own tests
+      - name: All tests (every package checks itself against the rulebook)
         run: uv run pytest -q
-      - name: schemas/ and examples/ are up to date
+      - name: examples/ is up to date
         run: |
-          uv run python packages/medbag_common/export_schemas.py > /dev/null
           uv run python packages/medbag_common/export_examples.py > /dev/null
-          git add -N packages/medbag_common/schemas packages/medbag_common/examples
-          git diff --exit-code packages/medbag_common/schemas packages/medbag_common/examples
+          git add -N packages/medbag_common/examples
+          git diff --exit-code packages/medbag_common/examples

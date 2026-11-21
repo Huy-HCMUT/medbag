@@ -7,7 +7,13 @@ import numpy as np
 from medbag_common import types as T
 
 from medbag_server import pipelines as P
-from medbag_server.pick_method import OWNER_PACKAGE
+
+OWNER_PACKAGE = {
+    "preprocess_label": "prep", "rectify": "prep", "changed_cells": "prep",
+    "read_label": "label", "check_fields": "label", "detect_pills": "pills", "answer": "voice",
+    "fingerprint": "check", "identify": "check", "match_fill": "check",
+    "check_tray": "check", "check_dose": "check", "alert_rules": "check",
+}
 
 PHOTO = np.zeros((1200, 900, 3), np.uint8)
 MODELS = P.Models()
@@ -23,8 +29,8 @@ def test_every_package_exports_its_functions():
         assert callable(getattr(importlib.import_module(package), name, None)), f"{package} must export {name}"
 
 
-def test_read_label():
-    assert isinstance(P.read_label(PHOTO, MODELS), T.LabelResult)
+def test_label_check():
+    assert isinstance(P.label_check(PHOTO, MODELS), T.LabelResult)
 
 
 def test_fill_check():
@@ -55,13 +61,11 @@ def test_lid_closed_when_no_dose_is_open():
 
 
 def test_unreadable_label_is_marked_by_the_server(monkeypatch):
-    from medbag_common import fake_results
-
-    real = fake_results.preprocess_label
+    real = P.preprocess_label
 
     def blurred(img):
         return real(img).model_copy(update={"sharp": False})
 
-    monkeypatch.setattr(fake_results, "preprocess_label", blurred)
-    result = P.read_label(PHOTO, MODELS)
+    monkeypatch.setattr(P, "preprocess_label", blurred)
+    result = P.label_check(PHOTO, MODELS)
     assert result.engine == "none" and result.flags[0].code == "photo_unreadable"

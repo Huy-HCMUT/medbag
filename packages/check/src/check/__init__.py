@@ -1,14 +1,14 @@
-"""Fingerprints, identification, fill/pre-dose/dose checks, alert rules (WBS 4.4-4.8).
+"""check (Emily): one file per function. Open the file and write your code there.
 
-Owner: 劉亮萱 Emily. Signatures: packages/medbag_common/src/medbag_common/interfaces.py
-
-For now every function below is a fake result from medbag_common.fake_results, so the server already works.
-Replace them one by one with your real code (a file per function is fine, e.g. fingerprint.py),
-keep the exact names and parameters, and run:
-    MEDBAG_IMPL=check uv run pytest packages/medbag_common/tests   # agreement test
-Add the libraries you need with:  uv add --package check opencv-python
+Test your package:  uv run pytest packages/check
+Add a library:      uv add --package check opencv-python
 """
 
-from medbag_common.fake_results import fingerprint, identify, match_fill, check_tray, check_dose, alert_rules  # TODO: replace with real code
+from .fingerprint import fingerprint
+from .identify import identify
+from .match_fill import match_fill
+from .check_tray import check_tray
+from .check_dose import check_dose
+from .alert_rules import alert_rules
 
 __all__ = ['fingerprint', 'identify', 'match_fill', 'check_tray', 'check_dose', 'alert_rules']
