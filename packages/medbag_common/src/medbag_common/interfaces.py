@@ -90,7 +90,7 @@ class CheckFields(Protocol):
         """
 
 
-# =========================================================================== Alex · pills, voice
+# =========================================================================== Alex · pills (detect_pills), voice (answer)
 
 
 class DetectPills(Protocol):

@@ -1,4 +1,4 @@
-"""Your own tests for label (contract tests live in packages/medbag_common/tests)."""
+"""Your own tests for label (agreement tests live in packages/medbag_common/tests)."""
 
 import label
 

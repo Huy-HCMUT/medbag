@@ -1,7 +1,8 @@
-"""Stand-in methods with the agreed signatures, for the server until each real one is ready.
+"""Fake results: every agreed function, returning a fixed answer of the right shape.
 
-They return fixed, correctly shaped answers so the web app and simulator can be built now.
-In the server: USE_REAL = {"rectify": False, ...}; swap each in when its contract test passes.
+The server uses these until each person's real function is ready, so the web app and the
+simulator can be built now. In server/.../config.py, USE_REAL["rectify"] = True switches one
+function to the real code once it passes the agreement test.
 """
 
 from __future__ import annotations

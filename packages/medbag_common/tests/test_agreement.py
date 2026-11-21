@@ -1,9 +1,9 @@
-"""Contract tests: every method returns the agreed type.
+"""Agreement tests: every function has the agreed name, parameters and return type (WBS 1.3).
 
-Run against the stubs:      uv run pytest packages/medbag_common/tests
-Run against real code:      MEDBAG_IMPL=prep uv run pytest packages/medbag_common/tests -k rectify
-(MEDBAG_IMPL names the module that holds the real functions; missing ones are skipped.)
-Put two sample photos in data/contract/: label.jpg and tray.jpg. Until then, blank images are used.
+Run against the fake results:  uv run pytest packages/medbag_common/tests
+Run against your real code:    MEDBAG_IMPL=prep uv run pytest packages/medbag_common/tests
+(MEDBAG_IMPL = your package name; functions it does not have are skipped.)
+Put two sample photos in data/test_samples/: label.jpg and tray.jpg. Until then, blank images are used.
 """
 
 from __future__ import annotations
@@ -19,8 +19,8 @@ import pytest
 
 from medbag_common import interfaces, types as T
 
-IMPL = importlib.import_module(os.environ.get("MEDBAG_IMPL", "medbag_common.stubs"))
-DATA = Path(os.environ.get("MEDBAG_DATA", "data/contract"))
+IMPL = importlib.import_module(os.environ.get("MEDBAG_IMPL", "medbag_common.fake_results"))
+DATA = Path(os.environ.get("MEDBAG_DATA", "data/test_samples"))
 
 
 def photo(name: str, shape=(1200, 900, 3)) -> np.ndarray:

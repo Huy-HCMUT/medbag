@@ -22,7 +22,7 @@ Each owner's package exposes these exact function names. `interfaces.py` has the
 | `changed_cells(before, after)` | Joshua | two `TrayView`s | `list[CellId]` | 3 (after) |
 | `check_dose(dose, before, after, changed, schedule)` | Emily | matches before and after | `CheckResult` | 3 (after) |
 | `alert_rules(log, sim_time, settings)` | Emily | dose log, simulator time | `list[Action]` | 4 |
-| `answer(question, schedule, log, language, gemini)` | Alex | question text | `Answer` | 5 (Should) |
+| `answer(question, schedule, log, language, gemini)` | Alex (`voice`) | question text | `Answer` | 5 (Should) |
 
 Compartments are numbered `cell = day * 4 + slot` (day 0 = Monday; slot 0 morning, 1 noon, 2 evening, 3 bedtime).
 
@@ -37,9 +37,9 @@ Compartments are numbered `cell = day * 4 + slot` (day 0 = Monday; slot 0 mornin
 
 ```bash
 uv sync
-uv run pytest packages/medbag_common/tests                    # against the stubs
+uv run pytest packages/medbag_common/tests                    # against the fake results
 MEDBAG_IMPL=prep uv run pytest packages/medbag_common/tests   # against Joshua's package, etc.
 ```
 
-`stubs.py` holds fixed answers with the same signatures; the server uses them until each real method passes
-its contract test. `schemas/` has a JSON Schema per type for anyone who prefers JSON.
+`fake_results.py` holds fixed answers with the same signatures; the server uses them until each real function
+passes its agreement test (`tests/test_agreement.py`). `schemas/` has a JSON Schema per type for anyone who prefers JSON.
