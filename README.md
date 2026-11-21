@@ -8,11 +8,14 @@ Plan, deadlines and status: the **USR** Google Sheet (tabs WBS, Tracker, Changel
 ```
 medbag/
 ├─ packages/                  each person's code (one folder = one Python package)
-│  ├─ medbag_common/          shared by everyone: data types + function list (Huy, WBS 1.3)
-│  │  └─ src/medbag_common/
-│  │     ├─ types.py          the shapes of the data passed between functions
-│  │     ├─ interfaces.py     every function's exact name, inputs and output
-│  │     └─ fake_results.py   fixed answers, used until each real function is ready
+│  ├─ medbag_common/          the rulebook everyone follows: data types + function list (Huy, WBS 1.3)
+│  │  ├─ README.md            the function table: who, what goes in, what comes out
+│  │  ├─ examples/            one real input and output per function (JSON)
+│  │  ├─ src/medbag_common/
+│  │  │  ├─ types.py          the shapes of the data passed between functions
+│  │  │  ├─ interfaces.py     every function's exact name, inputs and output
+│  │  │  └─ fake_results.py   fixed answers, used until each real function is ready
+│  │  └─ tests/test_agreement.py  checks your code follows the rulebook
 │  ├─ prep/                   Joshua: prepare the images (label cleanup, tray straightening, what changed)
 │  ├─ label/                  Sam: read the prescription label (Gemini, Tesseract fallback, rule checks)
 │  ├─ pills/                  Alex: find every pill on the straightened tray (YOLO26n)
@@ -24,6 +27,7 @@ medbag/
 │  │  ├─ config.py            settings from .env, and USE_REAL (real code or fake result)
 │  │  ├─ pipelines.py         the order the server calls everyone's functions
 │  │  ├─ pick_method.py       gives each function's real code or its fake result
+│  │  ├─ images.py            turns every uploaded phone photo upright and to the agreed size
 │  │  └─ db.py                SQLite tables
 │  ├─ tests/               checks that all the pieces run together
 │  └─ web/
@@ -45,6 +49,37 @@ medbag/
 | `pills` | Alex | `detect_pills` |
 | `voice` | Alex | `answer` |
 | `check` | Emily | `fingerprint`, `identify`, `match_fill`, `check_tray`, `check_dose`, `alert_rules` |
+
+## The rulebook: `packages/medbag_common/`
+
+`medbag_common` is **not** where everyone's code is collected. It is written first, by Huy, and says how every
+piece must look so the pieces fit together. Your real code goes in **your own package**; nobody copies it into
+`medbag_common`.
+
+```
+                medbag_common      the rulebook (Huy)
+             ↗   ↗    ↑    ↖   ↖
+         prep label pills voice check      your code: imports its types from medbag_common
+             ↖   ↖    ↓    ↗   ↗
+                   server          puts the pieces together: calls everyone's functions in order
+```
+
+It does three jobs:
+
+1. **Read it and follow it.** The function table in `packages/medbag_common/README.md`, the rules in each docstring of
+   `interfaces.py` and `examples/` tell you what your function takes in, what it gives back, and what to return for a bad photo.
+2. **Import it.** Never define your own `Pill` or `TrayView`. Always `from medbag_common.types import Pill, TrayView`, so what
+   Joshua's `rectify` returns goes straight into Alex's `detect_pills` and Emily's `identify`.
+3. **It is checked automatically.** `tests/test_agreement.py` and CI compare your code with the rulebook. A wrong function name,
+   parameter or return type turns CI red, and the Pull Request cannot be merged.
+
+**Who changes it:** only Huy. Until Sun Nov 22, 9 pm, comment on the draft. After that it is frozen as v1.0 (tag
+`interface-v1.0`). If you need a change later, ask Huy: he checks who else it affects, updates `types.py`,
+`interfaces.py` and `fake_results.py`, rebuilds `schemas/` and `examples/`, and tells everyone.
+
+**What does not change when your code is ready:** `fake_results.py` stays, because the agreement tests still use everyone
+else's fake results while testing yours. What changes is the import line in your own package's `__init__.py`, and
+Huy's switch for your function in `server/src/medbag_server/config.py` (`USE_REAL`).
 
 ## How the pieces fit
 

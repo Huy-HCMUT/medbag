@@ -1,8 +1,22 @@
 # medbag_common · interface agreement (WBS 1.3)
 
-Shared data types and the exact function signatures for The Talking Medicine Bag.
+Shared data types and the exact function signatures for The Talking Medicine Bag: **the rulebook everyone follows**.
 Draft v0.3 by Huy, 2026-11-22. **Please comment by Sun Nov 22, 9 pm**; after that the names and fields are frozen
 and changes go through Huy.
+
+> **This folder is not where your code goes.** Write your functions in your own package (`packages/prep/`, `label/`,
+> `pills/`, `voice/` or `check/`) and import the types from here: `from medbag_common.types import TrayView, Pill`.
+> Only Huy edits this folder. Need a change? Ask Huy, so everyone else's code keeps fitting.
+
+| File | What it is for | Do you edit it? |
+|---|---|---|
+| `README.md` (this file) | The function table: who makes each function, what goes in, what comes out | No, read it |
+| `examples/<function>.json` | One real input and output per function | No, read it |
+| `src/medbag_common/types.py` | Every data type passed between functions (`Pill`, `TrayView`, `Match`, ...) | No, import it |
+| `src/medbag_common/interfaces.py` | Each function's exact name and parameters, with its rules in the docstring | No, follow it |
+| `src/medbag_common/fake_results.py` | Fixed answers with the right shape, used until your real function is ready | No |
+| `tests/test_agreement.py` | Checks your real functions against this rulebook | No, run it |
+| `schemas/`, `export_schemas.py`, `export_examples.py` | JSON versions of the types and examples, rebuilt by Huy | No |
 
 ## What each person delivers
 
