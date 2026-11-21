@@ -1,0 +1,52 @@
+{
+  "function": "detect_pills",
+  "in": {
+    "view": {
+      "image": "<image 640 x 1120 x 3>",
+      "cells": [
+        "<image 160 x 160 x 3>",
+        "... 28 images in all"
+      ],
+      "cell_boxes": [
+        {
+          "x": 0.0,
+          "y": 0.0,
+          "w": 160.0,
+          "h": 160.0
+        },
+        {
+          "x": 0.0,
+          "y": 160.0,
+          "w": 160.0,
+          "h": 160.0
+        },
+        "... 28 items in all"
+      ],
+      "mm_per_px": 0.25
+    },
+    "model": "<YOLO26n model>"
+  },
+  "out": [
+    {
+      "cell": 0,
+      "box": {
+        "x": 60.0,
+        "y": 60.0,
+        "w": 40.0,
+        "h": 40.0
+      },
+      "confidence": 0.95
+    },
+    {
+      "cell": 1,
+      "box": {
+        "x": 60.0,
+        "y": 220.0,
+        "w": 40.0,
+        "h": 40.0
+      },
+      "confidence": 0.95
+    },
+    "... 28 items in all"
+  ]
+}

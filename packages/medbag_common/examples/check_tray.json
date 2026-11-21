@@ -1,0 +1,130 @@
+{
+  "function": "check_tray",
+  "in": {
+    "dose": {
+      "dose_id": "2026-11-23-noon",
+      "cell": 1,
+      "slot": "noon",
+      "due_at": "2026-11-23T12:30:00"
+    },
+    "matches": [
+      {
+        "pill": {
+          "cell": 1,
+          "box": {
+            "x": 60.0,
+            "y": 220.0,
+            "w": 40.0,
+            "h": 40.0
+          },
+          "confidence": 0.95
+        },
+        "medicine_id": "m1",
+        "score": 0.92,
+        "certainty": "sure",
+        "fingerprint": {
+          "colour_lab": [
+            95.0,
+            0.0,
+            2.0
+          ],
+          "length_mm": 8.0,
+          "width_mm": 8.0,
+          "shape": "round",
+          "embedding": null
+        }
+      }
+    ],
+    "schedule": {
+      "medicines": [
+        {
+          "id": "m1",
+          "name": "安壓平錠 5mg",
+          "dose_per_time": 1,
+          "frequency_per_day": 2,
+          "slots": [
+            "morning",
+            "noon"
+          ],
+          "meal_timing": "after_meal",
+          "appearance": {
+            "text": "白色圓形錠",
+            "colour": "white",
+            "shape": "round"
+          },
+          "purpose": "",
+          "evidence": [
+            {
+              "field": "frequency_per_day",
+              "source": "text",
+              "snippet": "每日 2 次"
+            }
+          ],
+          "unclear_fields": []
+        }
+      ],
+      "cells": {
+        "0": [
+          {
+            "medicine_id": "m1",
+            "count": 1
+          }
+        ],
+        "1": [
+          {
+            "medicine_id": "m1",
+            "count": 1
+          }
+        ],
+        "...": "28 compartments in all"
+      },
+      "approved_by": "family",
+      "approved_at": "2026-11-23T09:00:00"
+    }
+  },
+  "out": {
+    "cells": [
+      {
+        "cell": 1,
+        "state": "ok",
+        "expected": [
+          {
+            "medicine_id": "m1",
+            "count": 1
+          }
+        ],
+        "found": [
+          {
+            "pill": {
+              "cell": 1,
+              "box": {
+                "x": 60.0,
+                "y": 220.0,
+                "w": 40.0,
+                "h": 40.0
+              },
+              "confidence": 0.95
+            },
+            "medicine_id": "m1",
+            "score": 0.92,
+            "certainty": "sure",
+            "fingerprint": {
+              "colour_lab": [
+                95.0,
+                0.0,
+                2.0
+              ],
+              "length_mm": 8.0,
+              "width_mm": 8.0,
+              "shape": "round",
+              "embedding": null
+            }
+          }
+        ],
+        "note": ""
+      }
+    ],
+    "lookalike": [],
+    "refs_to_save": []
+  }
+}

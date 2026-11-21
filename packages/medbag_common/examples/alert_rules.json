@@ -1,0 +1,33 @@
+{
+  "function": "alert_rules",
+  "in": {
+    "log": [
+      {
+        "at": "2026-11-23T12:30:00",
+        "dose_id": "2026-11-23-noon",
+        "kind": "reminder",
+        "detail": {}
+      }
+    ],
+    "sim_time": "2026-11-23T12:50:00",
+    "settings": {
+      "dose_times": {
+        "Slot.morning": "08:00",
+        "Slot.noon": "12:30",
+        "Slot.evening": "18:30",
+        "Slot.bedtime": "21:30"
+      },
+      "second_reminder_min": 15,
+      "family_alert_min": 30,
+      "wrong_pill_min": 2
+    }
+  },
+  "out": [
+    {
+      "kind": "second_reminder",
+      "dose_id": "2026-11-23-noon",
+      "reason": "late",
+      "message_key": "second_reminder"
+    }
+  ]
+}

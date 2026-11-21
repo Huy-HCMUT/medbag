@@ -1,0 +1,46 @@
+{
+  "function": "read_label",
+  "in": {
+    "label": {
+      "image": "<image 2000 x 1500 x 3>",
+      "binary": "<image 2000 x 1500>",
+      "found": true,
+      "sharp": true,
+      "name_blurred": true
+    },
+    "gemini": null
+  },
+  "out": {
+    "medicines": [
+      {
+        "id": "m1",
+        "name": "安壓平錠 5mg",
+        "dose_per_time": 1,
+        "frequency_per_day": 2,
+        "slots": [
+          "morning"
+        ],
+        "meal_timing": "after_meal",
+        "appearance": {
+          "text": "白色圓形錠",
+          "colour": "white",
+          "shape": "round"
+        },
+        "purpose": "",
+        "evidence": [
+          {
+            "field": "frequency_per_day",
+            "source": "text",
+            "snippet": "每日 2 次"
+          }
+        ],
+        "unclear_fields": [
+          "slots"
+        ]
+      }
+    ],
+    "engine": "tesseract",
+    "flags": [],
+    "raw_text": ""
+  }
+}

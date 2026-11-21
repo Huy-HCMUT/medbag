@@ -7,6 +7,10 @@ server process; everything that goes over HTTP or into SQLite is JSON from these
 Compartments are numbered 0..27: cell = day * 4 + slot
   day:  0 = Monday ... 6 = Sunday
   slot: 0 = morning, 1 = noon, 2 = evening, 3 = bedtime
+
+The straightened tray (TrayView.image) is always TRAY_W x TRAY_H = 1120 x 640 px, whatever phone took
+the photo: 7 day columns (Monday on the left) x 4 slot rows (morning on top), CELL_PX = 160 px each.
+Compartment c sits at x = (c // 4) * 160, y = (c % 4) * 160.
 """
 
 from __future__ import annotations
@@ -22,6 +26,10 @@ from pydantic import BaseModel, ConfigDict, Field
 
 CellId = int  # 0..27
 
+CELL_PX = 160  # one compartment in the straightened tray, in pixels
+TRAY_W = 7 * CELL_PX  # 1120: 7 day columns
+TRAY_H = 4 * CELL_PX  # 640: 4 slot rows
+
 
 class Slot(str, Enum):
     morning = "morning"
@@ -36,6 +44,11 @@ SLOT_ORDER = [Slot.morning, Slot.noon, Slot.evening, Slot.bedtime]
 def cell_id(day: int, slot: Slot) -> CellId:
     """Compartment number for a day (0 = Monday) and a slot."""
     return day * 4 + SLOT_ORDER.index(slot)
+
+
+def cell_box(cell: CellId) -> "Box":
+    """Where compartment `cell` sits in the straightened tray (1120 x 640 px)."""
+    return Box(x=(cell // 4) * CELL_PX, y=(cell % 4) * CELL_PX, w=CELL_PX, h=CELL_PX)
 
 
 class MealTiming(str, Enum):
@@ -67,7 +80,8 @@ class ImageModel(BaseModel):
 class PreparedLabel(ImageModel):
     """preprocess_label (Joshua) -> read_label (Sam)."""
 
-    image: np.ndarray = Field(exclude=True)  # cropped, straightened, patient name blurred
+    image: np.ndarray = Field(exclude=True)  # colour image: cropped, straightened, patient name blurred (for Gemini)
+    binary: np.ndarray = Field(exclude=True)  # same label in black and white, noise removed (for Tesseract)
     found: bool  # a label was found in the photo
     sharp: bool  # sharp enough to read; False -> the app asks for a new photo
     name_blurred: bool  # must be True before anything is sent to Gemini (FR-P-14)
@@ -122,7 +136,7 @@ class LabelResult(BaseModel):
     """read_label and check_fields (Sam)."""
 
     medicines: list[Medicine] = []
-    engine: Literal["gemini", "tesseract", "none"]  # "none" = the photo could not be read
+    engine: Literal["gemini", "tesseract", "none"]  # read_label gives gemini or tesseract; "none" is set by the server when the photo is unreadable
     flags: list[Flag] = []
     raw_text: str = ""  # Tesseract text, or Gemini's transcription
 
@@ -148,13 +162,13 @@ class Schedule(BaseModel):
 
 
 class TrayView(ImageModel):
-    """rectify (Joshua). None is returned instead when the markers are not all found."""
+    """rectify (Joshua). rectify returns None instead when it cannot see all 4 markers
+    (lid open, a marker covered, or a bad photo; FR-C-15). So a TrayView always means: lid closed."""
 
-    image: np.ndarray = Field(exclude=True)  # straightened full tray
-    cells: list[np.ndarray] = Field(exclude=True)  # 28 compartment crops, index = CellId
-    cell_boxes: list[Box]  # where each crop sits in `image`
-    mm_per_px: float
-    lid_closed: bool  # all four markers seen (FR-C-15)
+    image: np.ndarray = Field(exclude=True)  # straightened full tray, always 640 x 1120 x 3 (TRAY_H x TRAY_W)
+    cells: list[np.ndarray] = Field(exclude=True)  # 28 compartment crops, 160 x 160 x 3 each, index = CellId
+    cell_boxes: list[Box]  # where each crop sits in `image`: cell_boxes[c] == cell_box(c)
+    mm_per_px: float  # real size of one pixel of `image`, from the marker distance
 
 
 class Pill(BaseModel):
@@ -176,10 +190,14 @@ class Fingerprint(BaseModel):
 
 
 class RefPhoto(BaseModel):
-    """A saved reference photo (FR-P-10). The crop file lives in the photo folder."""
+    """A saved reference photo (FR-P-10), read from the database by the server.
+
+    The server cuts the crop from the tray photo and saves the file after the family confirms.
+    identify only uses `fingerprint`; it never opens `path`.
+    """
 
     medicine_id: str
-    path: str
+    path: str  # crop file under data/photos/, for the family app
     fingerprint: Fingerprint
 
 
@@ -190,12 +208,24 @@ class Certainty(str, Enum):
 
 
 class Match(BaseModel):
-    """identify (Emily)."""
+    """identify and match_fill (Emily): one pill and which medicine it is."""
 
     pill: Pill
     medicine_id: Optional[str] = None  # None when no_match
     score: float  # 0..1, higher = more alike
     certainty: Certainty
+    fingerprint: Fingerprint  # the pill's own fingerprint; the server saves it as a reference when the family confirms (SP9)
+
+
+class RefToSave(BaseModel):
+    """match_fill (Emily): a pill whose crop should become a reference photo once the family confirms.
+
+    The server cuts the crop from TrayView.image at pill.box and saves it as a RefPhoto.
+    """
+
+    pill: Pill
+    medicine_id: str
+    fingerprint: Fingerprint
 
 
 class CellState(str, Enum):
@@ -215,12 +245,12 @@ class CellStatus(BaseModel):
     note: str = ""  # e.g. "orange pill, label says white"
 
 
-class FillResult(BaseModel):
-    """match_fill (fill check, all 28) and check_tray (pre-dose, due cell) (Emily)."""
+class TrayResult(BaseModel):
+    """match_fill (fill check: all 28 compartments) and check_tray (pre-dose check: the due compartment only) (Emily)."""
 
     cells: list[CellStatus]
     lookalike: list[tuple[str, str]] = []  # medicine id pairs that look too alike (FR-P-11)
-    refs_to_save: list[RefPhoto] = []  # filled by match_fill; saved only after the family confirms
+    refs_to_save: list[RefToSave] = []  # match_fill only; the server saves them after the family confirms
 
 
 # --------------------------------------------------------------------------- dose check
@@ -240,7 +270,7 @@ class DoseResult(str, Enum):
     extra_pill = "extra_pill"
     not_removed = "not_removed"
     unsure = "unsure"  # waits for the family (SP9)
-    cannot_check = "cannot_check"  # markers not found
+    cannot_check = "cannot_check"  # set by the server, never by check_dose: markers not found on a photo
 
 
 class CheckResult(BaseModel):

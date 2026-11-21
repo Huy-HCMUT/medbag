@@ -170,7 +170,7 @@
       "type": "object"
     },
     "Match": {
-      "description": "identify (Emily).",
+      "description": "identify and match_fill (Emily): one pill and which medicine it is.",
       "properties": {
         "pill": {
           "$ref": "#/$defs/Pill"
@@ -193,12 +193,16 @@
         },
         "certainty": {
           "$ref": "#/$defs/Certainty"
+        },
+        "fingerprint": {
+          "$ref": "#/$defs/Fingerprint"
         }
       },
       "required": [
         "pill",
         "score",
-        "certainty"
+        "certainty",
+        "fingerprint"
       ],
       "title": "Match",
       "type": "object"
@@ -226,15 +230,14 @@
       "title": "Pill",
       "type": "object"
     },
-    "RefPhoto": {
-      "description": "A saved reference photo (FR-P-10). The crop file lives in the photo folder.",
+    "RefToSave": {
+      "description": "match_fill (Emily): a pill whose crop should become a reference photo once the family confirms.\n\nThe server cuts the crop from TrayView.image at pill.box and saves it as a RefPhoto.",
       "properties": {
+        "pill": {
+          "$ref": "#/$defs/Pill"
+        },
         "medicine_id": {
           "title": "Medicine Id",
-          "type": "string"
-        },
-        "path": {
-          "title": "Path",
           "type": "string"
         },
         "fingerprint": {
@@ -242,15 +245,15 @@
         }
       },
       "required": [
+        "pill",
         "medicine_id",
-        "path",
         "fingerprint"
       ],
-      "title": "RefPhoto",
+      "title": "RefToSave",
       "type": "object"
     }
   },
-  "description": "match_fill (fill check, all 28) and check_tray (pre-dose, due cell) (Emily).",
+  "description": "match_fill (fill check: all 28 compartments) and check_tray (pre-dose check: the due compartment only) (Emily).",
   "properties": {
     "cells": {
       "items": {
@@ -280,7 +283,7 @@
     "refs_to_save": {
       "default": [],
       "items": {
-        "$ref": "#/$defs/RefPhoto"
+        "$ref": "#/$defs/RefToSave"
       },
       "title": "Refs To Save",
       "type": "array"
@@ -289,6 +292,6 @@
   "required": [
     "cells"
   ],
-  "title": "FillResult",
+  "title": "TrayResult",
   "type": "object"
 }

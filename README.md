@@ -56,9 +56,11 @@ The server calls everyone's functions in a fixed order, one pipeline per job (`s
 | 2 Fill check | the filled box is closed | `rectify` (Joshua) → `detect_pills` (Alex) → `match_fill` (Emily) |
 | 3a Pre-dose check | each dose time, lid closed | `rectify` → `detect_pills` → `identify` → `check_tray` (Emily) |
 | 3b Dose check | the lid closes after the dose | `rectify` → `changed_cells` (Joshua) → `detect_pills` → `identify` → `check_dose` (Emily) |
+| 3c Lid check | the lid closes when no dose is open | `rectify` → `changed_cells` (Joshua); any change alerts the family |
 | 4 Alerts | every clock tick | `alert_rules` (Emily) |
 | 5 Voice question | big button held (Should) | `answer` (Alex) |
 
+Every uploaded photo first goes through `server/src/medbag_server/images.py` (upright, BGR, shrunk), so phone size does not matter.
 Until your real function is ready the server uses its fake result, so every pipeline already runs.
 When your agreement test passes, Huy sets your function to `True` in `server/src/medbag_server/config.py`.
 

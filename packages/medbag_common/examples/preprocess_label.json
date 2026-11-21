@@ -1,0 +1,13 @@
+{
+  "function": "preprocess_label",
+  "in": {
+    "img": "<image 2000 x 1500 x 3>"
+  },
+  "out": {
+    "image": "<image 2000 x 1500 x 3>",
+    "binary": "<image 2000 x 1500>",
+    "found": true,
+    "sharp": true,
+    "name_blurred": true
+  }
+}
