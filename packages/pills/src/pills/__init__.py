@@ -1,4 +1,4 @@
-"""Pill detection with YOLO26n (WBS 4.3).
+"""Pill detection with YOLO26n on the straightened tray (WBS 4.3).
 
 Owner: 鄂弘 Alex. Signatures: packages/medbag_common/src/medbag_common/interfaces.py
 

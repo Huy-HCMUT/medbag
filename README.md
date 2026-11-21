@@ -15,15 +15,17 @@ medbag/
 │  │     └─ fake_results.py   fixed answers, used until each real function is ready
 │  ├─ prep/                   Joshua: prepare the images (label cleanup, tray straightening, what changed)
 │  ├─ label/                  Sam: read the prescription label (Gemini, Tesseract fallback, rule checks)
-│  ├─ pills/                  Alex: find the pills in each compartment (YOLO26n)
+│  ├─ pills/                  Alex: find every pill on the straightened tray (YOLO26n)
 │  ├─ voice/                  Alex: answer spoken questions (Gemini, Should)
 │  └─ check/                  Emily: identify pills, fill / pre-dose / dose checks, alert rules
 ├─ server/                    Huy: the Python server, database, family web app and bag simulator
 │  ├─ src/medbag_server/
 │  │  ├─ main.py              starts the server and lists the endpoints
 │  │  ├─ config.py            settings from .env, and USE_REAL (real code or fake result)
+│  │  ├─ pipelines.py         the order the server calls everyone's functions
 │  │  ├─ pick_method.py       gives each function's real code or its fake result
 │  │  └─ db.py                SQLite tables
+│  ├─ tests/               checks that all the pieces run together
 │  └─ web/
 │     ├─ family/              family web app, opened on the phone
 │     └─ sim/                 bag simulator, opened on the laptop
@@ -43,6 +45,22 @@ medbag/
 | `pills` | Alex | `detect_pills` |
 | `voice` | Alex | `answer` |
 | `check` | Emily | `fingerprint`, `identify`, `match_fill`, `check_tray`, `check_dose`, `alert_rules` |
+
+## How the pieces fit
+
+The server calls everyone's functions in a fixed order, one pipeline per job (`server/src/medbag_server/pipelines.py`):
+
+| Pipeline | When | Calls, in order |
+|---|---|---|
+| 1 Read the label | family sends a label photo | `preprocess_label` (Joshua) → `read_label` → `check_fields` (Sam) |
+| 2 Fill check | the filled box is closed | `rectify` (Joshua) → `detect_pills` (Alex) → `match_fill` (Emily) |
+| 3a Pre-dose check | each dose time, lid closed | `rectify` → `detect_pills` → `identify` → `check_tray` (Emily) |
+| 3b Dose check | the lid closes after the dose | `rectify` → `changed_cells` (Joshua) → `detect_pills` → `identify` → `check_dose` (Emily) |
+| 4 Alerts | every clock tick | `alert_rules` (Emily) |
+| 5 Voice question | big button held (Should) | `answer` (Alex) |
+
+Until your real function is ready the server uses its fake result, so every pipeline already runs.
+When your agreement test passes, Huy sets your function to `True` in `server/src/medbag_server/config.py`.
 
 ## Words used here
 

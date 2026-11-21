@@ -92,8 +92,10 @@ def check_fields(result: LabelResult) -> LabelResult:
 # --- Alex
 
 
-def detect_pills(cell_img: np.ndarray, cell: CellId, model: Any) -> list[Pill]:
-    return [Pill(cell=cell, box=Box(x=30, y=30, w=40, h=40), confidence=0.95)]
+def detect_pills(view: TrayView, model: Any) -> list[Pill]:
+    # one pill in the middle of every compartment
+    return [Pill(cell=c, box=Box(x=b.x + b.w / 2 - 20, y=b.y + b.h / 2 - 20, w=40, h=40), confidence=0.95)
+            for c, b in enumerate(view.cell_boxes)]
 
 
 def answer(question: str, schedule: Schedule, log: list[LogEntry], language: str, gemini: Any) -> Answer:
@@ -103,11 +105,11 @@ def answer(question: str, schedule: Schedule, log: list[LogEntry], language: str
 # --- Emily
 
 
-def fingerprint(crop: np.ndarray, mm_per_px: float, dino: Any = None) -> Fingerprint:
+def fingerprint(view: TrayView, pill: Pill, dino: Any = None) -> Fingerprint:
     return Fingerprint(colour_lab=(95.0, 0.0, 2.0), length_mm=8.0, width_mm=8.0, shape="round")
 
 
-def identify(cell_img: np.ndarray, pill: Pill, mm_per_px: float, refs: list[RefPhoto]) -> Match:
+def identify(view: TrayView, pill: Pill, refs: list[RefPhoto]) -> Match:
     return Match(pill=pill, medicine_id="m1", score=0.92, certainty=Certainty.sure)
 
 
@@ -115,20 +117,19 @@ def _ok(cell: CellId, schedule: Schedule) -> CellStatus:
     return CellStatus(cell=cell, state=CellState.ok, expected=schedule.cells.get(cell, []), found=[])
 
 
-def match_fill(view: TrayView, pills: dict[CellId, list[Pill]], schedule: Schedule,
+def match_fill(view: TrayView, pills: list[Pill], schedule: Schedule,
                refs: Optional[list[RefPhoto]] = None) -> FillResult:
     return FillResult(cells=[_ok(c, schedule) for c in range(28)])
 
 
-def check_tray(view: TrayView, pills: list[Pill], dose: DoseRef, schedule: Schedule,
-               refs: list[RefPhoto]) -> FillResult:
+def check_tray(dose: DoseRef, matches: list[Match], schedule: Schedule) -> FillResult:
     return FillResult(cells=[_ok(dose.cell, schedule)])
 
 
-def check_dose(dose: DoseRef, before: dict[CellId, list[Match]], after: dict[CellId, list[Match]],
-               changed: list[CellId], schedule: Schedule) -> CheckResult:
-    return CheckResult(dose=dose, result=DoseResult.correct, taken=before.get(dose.cell, []),
-                       message_key="well_done")
+def check_dose(dose: DoseRef, before: list[Match], after: list[Match], changed: list[CellId],
+               schedule: Schedule) -> CheckResult:
+    taken = [m for m in before if m.pill.cell == dose.cell]
+    return CheckResult(dose=dose, result=DoseResult.correct, taken=taken, message_key="well_done")
 
 
 def alert_rules(log: list[LogEntry], sim_time: datetime, settings: Settings) -> list[Action]:

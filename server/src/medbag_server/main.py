@@ -2,6 +2,7 @@
 
 Simulator: http://localhost:8000/sim     Family app: http://<laptop IP>:8000/family
 Endpoints follow the table in the Functional Requirements doc; add them one by one.
+Each endpoint reads the request, calls one function in pipelines.py, saves to db and replies.
 """
 
 from contextlib import asynccontextmanager
@@ -13,6 +14,7 @@ from medbag_common.types import Settings
 
 from . import db
 from .config import GEMINI_API_KEY, USE_REAL
+from .pipelines import Models
 
 WEB = Path(__file__).resolve().parents[2] / "web"
 
@@ -20,8 +22,8 @@ WEB = Path(__file__).resolve().parents[2] / "web"
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     db.init()
-    # Load YOLO26n, DINOv2 and the Gemini client here, once, and keep them on app.state.
-    app.state.gemini = None  # e.g. genai.Client(api_key=GEMINI_API_KEY) when GEMINI_API_KEY is set
+    # Load YOLO26n, DINOv2 and the Gemini client here, once; pipelines.py passes them on.
+    app.state.models = Models(yolo=None, dino=None, gemini=None)  # e.g. gemini=genai.Client(api_key=GEMINI_API_KEY)
     yield
 
 
