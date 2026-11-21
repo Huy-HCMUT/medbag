@@ -1,0 +1,322 @@
+{
+  "about": "Test photos for The Talking Medicine Bag (WBS 2.4, Emily). One entry per situation; the server and the agreement tests read this file. Fill in 'photo' with the real file path under data/ once the photo is taken, and replace every <...> placeholder.",
+  "how_to_shoot": [
+    "Phone fixed at the same height, same lamp, matte gray tray sheet with ArUco markers 0-3 and colour patches.",
+    "Take the before photo first, then change only the compartment(s) the situation needs, then take the after photo. Do not move the tray sheet, except for C7.",
+    "No real names or ID numbers in any photo (FR-P-14)."
+  ],
+  "example_dose": {
+    "dose_id": "<date>-noon",
+    "cell": 1,
+    "slot": "noon",
+    "day": "Monday",
+    "expected_pills": [
+      "<white tablet medicine id>",
+      "<orange tablet medicine id>"
+    ],
+    "note": "Replace with the medicines chosen in WBS 2.1."
+  },
+  "cells": "cell = day * 4 + slot; day 0 = Monday, slot 0 morning, 1 noon, 2 evening, 3 bedtime",
+  "cases": [
+    {
+      "id": "A1",
+      "group": "fill_check",
+      "situation": "All 28 compartments filled as scheduled.",
+      "endpoint": "/api/tray",
+      "photo": "",
+      "suggested_file": "test_set/fill/A1_all_correct.jpg",
+      "expected": {
+        "all_cells": "ok"
+      },
+      "demo": "Part 1 step 7",
+      "priority": "Must"
+    },
+    {
+      "id": "A2",
+      "group": "fill_check",
+      "situation": "Filling mistake: one orange tablet in a noon compartment.",
+      "endpoint": "/api/tray",
+      "photo": "",
+      "suggested_file": "test_set/fill/A2_orange_in_noon.jpg",
+      "expected": {
+        "flagged_cells": [
+          "<cell id of the noon compartment>"
+        ],
+        "state": "wrong"
+      },
+      "demo": "Part 1 steps 5-6",
+      "priority": "Must"
+    },
+    {
+      "id": "A3",
+      "group": "fill_check",
+      "situation": "Two medicines that look almost the same.",
+      "endpoint": "/api/tray",
+      "photo": "",
+      "suggested_file": "test_set/fill/A3_lookalike.jpg",
+      "expected": {
+        "lookalike": [
+          "<medicine id>",
+          "<medicine id>"
+        ]
+      },
+      "demo": "none (FR-P-11)",
+      "priority": "Should"
+    },
+    {
+      "id": "B1",
+      "group": "pre_dose",
+      "situation": "Due compartment holds exactly the right pills. Also the before photo for C1, C4, C5, C6, C7.",
+      "endpoint": "/api/tray",
+      "cell": 1,
+      "photo": "",
+      "suggested_file": "test_set/pre_dose/B1_mon_noon_ok.jpg",
+      "expected": {
+        "state": "ok",
+        "action": "open"
+      },
+      "demo": "Part 2 step 8",
+      "priority": "Must"
+    },
+    {
+      "id": "B2",
+      "group": "pre_dose",
+      "situation": "A yellow evening capsule is in the noon compartment.",
+      "endpoint": "/api/tray",
+      "cell": 1,
+      "photo": "",
+      "suggested_file": "test_set/pre_dose/B2_yellow_in_noon.jpg",
+      "expected": {
+        "state": "wrong",
+        "action": "hold"
+      },
+      "demo": "Part 3 case 12",
+      "priority": "Must"
+    },
+    {
+      "id": "B3",
+      "group": "pre_dose",
+      "situation": "One extra pill in the due compartment.",
+      "endpoint": "/api/tray",
+      "cell": 1,
+      "photo": "",
+      "suggested_file": "test_set/pre_dose/B3_extra.jpg",
+      "expected": {
+        "state": "extra",
+        "action": "hold"
+      },
+      "demo": "Part 3 case 12 (slide)",
+      "priority": "Nice to have"
+    },
+    {
+      "id": "B4",
+      "group": "pre_dose",
+      "situation": "A foreign pill (paper pill in a colour that is not in her reference photos).",
+      "endpoint": "/api/tray",
+      "cell": 1,
+      "photo": "",
+      "suggested_file": "test_set/pre_dose/B4_foreign.jpg",
+      "expected": {
+        "state": "unsure",
+        "action": "hold, family confirms"
+      },
+      "demo": "Part 3 case 20",
+      "priority": "Must"
+    },
+    {
+      "id": "B5",
+      "group": "pre_dose",
+      "situation": "Due compartment is empty.",
+      "endpoint": "/api/tray",
+      "cell": 1,
+      "photo": "",
+      "suggested_file": "test_set/pre_dose/B5_empty.jpg",
+      "expected": {
+        "state": "empty",
+        "action": "hold"
+      },
+      "demo": "Part 3 case 12 (slide)",
+      "priority": "Nice to have"
+    },
+    {
+      "id": "B6",
+      "group": "pre_dose",
+      "situation": "One of the two pills is missing.",
+      "endpoint": "/api/tray",
+      "cell": 1,
+      "photo": "",
+      "suggested_file": "test_set/pre_dose/B6_missing_one.jpg",
+      "expected": {
+        "state": "missing",
+        "action": "open, say one pill is missing"
+      },
+      "demo": "Part 3 case 12 (slide)",
+      "priority": "Nice to have"
+    },
+    {
+      "id": "B7",
+      "group": "pre_dose",
+      "situation": "One marker covered; the due compartment also holds a yellow evening capsule. Before photo for C2.",
+      "endpoint": "/api/tray",
+      "cell": 1,
+      "photo": "",
+      "suggested_file": "test_set/pre_dose/B7_marker_covered.jpg",
+      "expected": {
+        "rectify": null,
+        "action": "not checked, remind as usual"
+      },
+      "demo": "Part 3 case 14 set-up",
+      "priority": "Must"
+    },
+    {
+      "id": "C1",
+      "group": "dose",
+      "situation": "She took all the right pills; the compartment is empty.",
+      "endpoint": "/api/check",
+      "cell": 1,
+      "before": "B1",
+      "photo": "",
+      "suggested_file": "test_set/dose/C1_all_taken.jpg",
+      "expected": {
+        "result": "correct",
+        "message": "well_done"
+      },
+      "demo": "Part 2 step 11",
+      "priority": "Must"
+    },
+    {
+      "id": "C2",
+      "group": "dose",
+      "situation": "She took the yellow evening capsule as well.",
+      "endpoint": "/api/check",
+      "cell": 1,
+      "before": "B7",
+      "photo": "",
+      "suggested_file": "test_set/dose/C2_wrong_taken.jpg",
+      "expected": {
+        "result": "wrong_pill"
+      },
+      "demo": "Part 3 cases 14-15",
+      "priority": "Must"
+    },
+    {
+      "id": "C3",
+      "group": "dose",
+      "situation": "She put the yellow capsule back.",
+      "endpoint": "/api/check",
+      "cell": 1,
+      "before": "B7",
+      "photo": "",
+      "suggested_file": "test_set/dose/C3_put_back.jpg",
+      "expected": {
+        "result": "correct",
+        "note": "wrong pill put back, no alert"
+      },
+      "demo": "Part 3 case 14",
+      "priority": "Must"
+    },
+    {
+      "id": "C4",
+      "group": "dose",
+      "situation": "She took only one of her two pills.",
+      "endpoint": "/api/check",
+      "cell": 1,
+      "before": "B1",
+      "photo": "",
+      "suggested_file": "test_set/dose/C4_one_left.jpg",
+      "expected": {
+        "result": "missing_pill"
+      },
+      "demo": "Part 3 case 16",
+      "priority": "Must"
+    },
+    {
+      "id": "C5",
+      "group": "dose",
+      "situation": "Lid opened and closed, nothing taken.",
+      "endpoint": "/api/check",
+      "cell": 1,
+      "before": "B1",
+      "photo": "",
+      "suggested_file": "test_set/dose/C5_nothing_taken.jpg",
+      "expected": {
+        "result": "not_removed"
+      },
+      "demo": "Part 3 case 17 (start)",
+      "priority": "Nice to have"
+    },
+    {
+      "id": "C6",
+      "group": "dose",
+      "situation": "Right pills taken, and another compartment was moved too.",
+      "endpoint": "/api/check",
+      "cell": 1,
+      "before": "B1",
+      "photo": "",
+      "suggested_file": "test_set/dose/C6_other_cell_changed.jpg",
+      "expected": {
+        "result": "correct",
+        "other_changed_cells": [
+          "<cell id>"
+        ]
+      },
+      "demo": "Part 3 case 19",
+      "priority": "Must"
+    },
+    {
+      "id": "C7",
+      "group": "dose",
+      "situation": "Nothing changed, but the tray moved slightly and the light is different.",
+      "endpoint": "/api/check",
+      "cell": 1,
+      "before": "B1",
+      "photo": "",
+      "suggested_file": "test_set/dose/C7_shift_light.jpg",
+      "expected": {
+        "changed_cells": []
+      },
+      "demo": "none (robustness, FR-C-13)",
+      "priority": "Must for the report"
+    },
+    {
+      "id": "C8",
+      "group": "dose",
+      "situation": "Lid open: only part of the markers can be seen.",
+      "endpoint": "/api/check",
+      "cell": 1,
+      "photo": "",
+      "suggested_file": "test_set/dose/C8_lid_open.jpg",
+      "expected": {
+        "lid_closed": false
+      },
+      "demo": "none (FR-C-15)",
+      "priority": "Should"
+    }
+  ],
+  "evaluation_set": {
+    "about": "Extra photos for the accuracy reports (FR-C-14: several days and slots). Same situations, other compartments and light.",
+    "repeat": [
+      {
+        "cases": [
+          "C1",
+          "C2",
+          "C4",
+          "C6",
+          "C7"
+        ],
+        "compartments": "4-5 different",
+        "light": "2 levels"
+      },
+      {
+        "cases": [
+          "B1",
+          "B2",
+          "B4"
+        ],
+        "compartments": "3-4 different",
+        "light": "2 levels"
+      }
+    ],
+    "photos": []
+  }
+}

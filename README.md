@@ -28,6 +28,7 @@ medbag/
 │     ├─ family/              family web app, opened on the phone
 │     └─ sim/                 bag simulator, opened on the laptop
 ├─ data/                      test photos: downloaded from Drive, not in git
+│  ├─ manifest.json           every test situation, its photo and the expected result (in git)
 │  └─ test_samples/           1 label + 1 tray photo used by the agreement tests (in git)
 ├─ pyproject.toml             the workspace: lists every package
 ├─ uv.lock                    exact library versions for everyone (never edit by hand)
