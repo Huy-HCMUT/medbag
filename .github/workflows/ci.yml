@@ -1,0 +1,24 @@
+name: tests
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+      - run: uv sync --locked
+      - name: Contract tests, once per owner package
+        run: |
+          for impl in medbag_common.stubs prep label pills check; do
+            echo "== $impl"
+            MEDBAG_IMPL=$impl uv run pytest -q packages/medbag_common/tests
+          done
+      - name: Each package's own tests
+        run: uv run pytest -q

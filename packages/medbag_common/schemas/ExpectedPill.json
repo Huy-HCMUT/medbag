@@ -1,0 +1,18 @@
+{
+  "properties": {
+    "medicine_id": {
+      "title": "Medicine Id",
+      "type": "string"
+    },
+    "count": {
+      "title": "Count",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "medicine_id",
+    "count"
+  ],
+  "title": "ExpectedPill",
+  "type": "object"
+}

@@ -1,0 +1,18 @@
+[project]
+name = "medbag"
+version = "0.1.0"
+description = "The Talking Medicine Bag: one uv workspace for the whole team"
+requires-python = ">=3.11"
+dependencies = ["medbag-server"]
+
+[dependency-groups]
+dev = ["pytest>=8"]
+
+[tool.uv.workspace]
+members = ["packages/*", "server"]
+
+[tool.uv.sources]
+medbag-server = { workspace = true }
+
+[tool.pytest.ini_options]
+testpaths = ["packages", "server"]

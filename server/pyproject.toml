@@ -1,0 +1,30 @@
+[project]
+name = "medbag-server"
+version = "0.1.0"
+description = "FastAPI server, SQLite, family web app and bag simulator. Owner: 阮冠威 Huy"
+requires-python = ">=3.11"
+dependencies = [
+    "medbag-common",
+    "prep",
+    "label",
+    "pills",
+    "check",
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+    "python-multipart>=0.0.9",
+    "python-dotenv>=1.0",
+]
+
+[tool.uv.sources]
+medbag-common = { workspace = true }
+prep = { workspace = true }
+label = { workspace = true }
+pills = { workspace = true }
+check = { workspace = true }
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/medbag_server"]

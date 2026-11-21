@@ -1,0 +1,9 @@
+# Replace each placeholder with the member's GitHub username (keep the @).
+# The owner is asked to review every pull request that touches their folder.
+/packages/prep/            @JOSHUA_GITHUB
+/packages/label/           @SAM_GITHUB
+/packages/pills/           @ALEX_GITHUB
+/packages/check/           @EMILY_GITHUB
+/packages/medbag_common/   @HUY_GITHUB
+/server/                   @HUY_GITHUB
+/.github/                  @HUY_GITHUB

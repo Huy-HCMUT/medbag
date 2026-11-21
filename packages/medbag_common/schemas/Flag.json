@@ -1,0 +1,51 @@
+{
+  "description": "A problem for the family to look at before approving.",
+  "properties": {
+    "medicine_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Medicine Id"
+    },
+    "field": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Field"
+    },
+    "code": {
+      "enum": [
+        "photo_unreadable",
+        "missing_field",
+        "impossible_dose",
+        "frequency_slots_mismatch",
+        "unclear",
+        "fallback_used"
+      ],
+      "title": "Code",
+      "type": "string"
+    },
+    "message": {
+      "title": "Message",
+      "type": "string"
+    }
+  },
+  "required": [
+    "code",
+    "message"
+  ],
+  "title": "Flag",
+  "type": "object"
+}

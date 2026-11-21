@@ -1,0 +1,63 @@
+{
+  "description": "fingerprint (Emily).",
+  "properties": {
+    "colour_lab": {
+      "maxItems": 3,
+      "minItems": 3,
+      "prefixItems": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "number"
+        }
+      ],
+      "title": "Colour Lab",
+      "type": "array"
+    },
+    "length_mm": {
+      "title": "Length Mm",
+      "type": "number"
+    },
+    "width_mm": {
+      "title": "Width Mm",
+      "type": "number"
+    },
+    "shape": {
+      "enum": [
+        "round",
+        "oval",
+        "capsule",
+        "other"
+      ],
+      "title": "Shape",
+      "type": "string"
+    },
+    "embedding": {
+      "anyOf": [
+        {
+          "items": {
+            "type": "number"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Embedding"
+    }
+  },
+  "required": [
+    "colour_lab",
+    "length_mm",
+    "width_mm",
+    "shape"
+  ],
+  "title": "Fingerprint",
+  "type": "object"
+}

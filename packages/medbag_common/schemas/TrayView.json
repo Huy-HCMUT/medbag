@@ -1,0 +1,58 @@
+{
+  "$defs": {
+    "Box": {
+      "description": "Axis-aligned box in pixels of the image it came from.",
+      "properties": {
+        "x": {
+          "title": "X",
+          "type": "number"
+        },
+        "y": {
+          "title": "Y",
+          "type": "number"
+        },
+        "w": {
+          "title": "W",
+          "type": "number"
+        },
+        "h": {
+          "title": "H",
+          "type": "number"
+        }
+      },
+      "required": [
+        "x",
+        "y",
+        "w",
+        "h"
+      ],
+      "title": "Box",
+      "type": "object"
+    }
+  },
+  "description": "rectify (Joshua). None is returned instead when the markers are not all found.",
+  "properties": {
+    "cell_boxes": {
+      "items": {
+        "$ref": "#/$defs/Box"
+      },
+      "title": "Cell Boxes",
+      "type": "array"
+    },
+    "mm_per_px": {
+      "title": "Mm Per Px",
+      "type": "number"
+    },
+    "lid_closed": {
+      "title": "Lid Closed",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "cell_boxes",
+    "mm_per_px",
+    "lid_closed"
+  ],
+  "title": "TrayView",
+  "type": "object"
+}

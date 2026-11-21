@@ -1,0 +1,54 @@
+{
+  "$defs": {
+    "Box": {
+      "description": "Axis-aligned box in pixels of the image it came from.",
+      "properties": {
+        "x": {
+          "title": "X",
+          "type": "number"
+        },
+        "y": {
+          "title": "Y",
+          "type": "number"
+        },
+        "w": {
+          "title": "W",
+          "type": "number"
+        },
+        "h": {
+          "title": "H",
+          "type": "number"
+        }
+      },
+      "required": [
+        "x",
+        "y",
+        "w",
+        "h"
+      ],
+      "title": "Box",
+      "type": "object"
+    }
+  },
+  "description": "detect_pills (Alex): one pill found in one compartment crop.",
+  "properties": {
+    "cell": {
+      "title": "Cell",
+      "type": "integer"
+    },
+    "box": {
+      "$ref": "#/$defs/Box"
+    },
+    "confidence": {
+      "title": "Confidence",
+      "type": "number"
+    }
+  },
+  "required": [
+    "cell",
+    "box",
+    "confidence"
+  ],
+  "title": "Pill",
+  "type": "object"
+}

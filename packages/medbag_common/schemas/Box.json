@@ -1,0 +1,29 @@
+{
+  "description": "Axis-aligned box in pixels of the image it came from.",
+  "properties": {
+    "x": {
+      "title": "X",
+      "type": "number"
+    },
+    "y": {
+      "title": "Y",
+      "type": "number"
+    },
+    "w": {
+      "title": "W",
+      "type": "number"
+    },
+    "h": {
+      "title": "H",
+      "type": "number"
+    }
+  },
+  "required": [
+    "x",
+    "y",
+    "w",
+    "h"
+  ],
+  "title": "Box",
+  "type": "object"
+}

@@ -1,0 +1,40 @@
+{
+  "$defs": {
+    "Slot": {
+      "enum": [
+        "morning",
+        "noon",
+        "evening",
+        "bedtime"
+      ],
+      "title": "Slot",
+      "type": "string"
+    }
+  },
+  "properties": {
+    "dose_id": {
+      "title": "Dose Id",
+      "type": "string"
+    },
+    "cell": {
+      "title": "Cell",
+      "type": "integer"
+    },
+    "slot": {
+      "$ref": "#/$defs/Slot"
+    },
+    "due_at": {
+      "format": "date-time",
+      "title": "Due At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "dose_id",
+    "cell",
+    "slot",
+    "due_at"
+  ],
+  "title": "DoseRef",
+  "type": "object"
+}

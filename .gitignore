@@ -1,0 +1,24 @@
+# Python and uv
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# secrets: never commit
+.env
+
+# data lives on Google Drive (2 Data/); only small contract samples are committed
+data/*
+!data/README.md
+!data/contract/
+!data/manifest.json
+
+# models live on Google Drive (3 Models/)
+*.pt
+*.onnx
+
+# local OS and editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

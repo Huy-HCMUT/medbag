@@ -1,0 +1,294 @@
+{
+  "$defs": {
+    "Box": {
+      "description": "Axis-aligned box in pixels of the image it came from.",
+      "properties": {
+        "x": {
+          "title": "X",
+          "type": "number"
+        },
+        "y": {
+          "title": "Y",
+          "type": "number"
+        },
+        "w": {
+          "title": "W",
+          "type": "number"
+        },
+        "h": {
+          "title": "H",
+          "type": "number"
+        }
+      },
+      "required": [
+        "x",
+        "y",
+        "w",
+        "h"
+      ],
+      "title": "Box",
+      "type": "object"
+    },
+    "CellState": {
+      "enum": [
+        "ok",
+        "wrong",
+        "missing",
+        "extra",
+        "unsure",
+        "empty"
+      ],
+      "title": "CellState",
+      "type": "string"
+    },
+    "CellStatus": {
+      "properties": {
+        "cell": {
+          "title": "Cell",
+          "type": "integer"
+        },
+        "state": {
+          "$ref": "#/$defs/CellState"
+        },
+        "expected": {
+          "items": {
+            "$ref": "#/$defs/ExpectedPill"
+          },
+          "title": "Expected",
+          "type": "array"
+        },
+        "found": {
+          "items": {
+            "$ref": "#/$defs/Match"
+          },
+          "title": "Found",
+          "type": "array"
+        },
+        "note": {
+          "default": "",
+          "title": "Note",
+          "type": "string"
+        }
+      },
+      "required": [
+        "cell",
+        "state",
+        "expected",
+        "found"
+      ],
+      "title": "CellStatus",
+      "type": "object"
+    },
+    "Certainty": {
+      "enum": [
+        "sure",
+        "unsure",
+        "no_match"
+      ],
+      "title": "Certainty",
+      "type": "string"
+    },
+    "ExpectedPill": {
+      "properties": {
+        "medicine_id": {
+          "title": "Medicine Id",
+          "type": "string"
+        },
+        "count": {
+          "title": "Count",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "medicine_id",
+        "count"
+      ],
+      "title": "ExpectedPill",
+      "type": "object"
+    },
+    "Fingerprint": {
+      "description": "fingerprint (Emily).",
+      "properties": {
+        "colour_lab": {
+          "maxItems": 3,
+          "minItems": 3,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Colour Lab",
+          "type": "array"
+        },
+        "length_mm": {
+          "title": "Length Mm",
+          "type": "number"
+        },
+        "width_mm": {
+          "title": "Width Mm",
+          "type": "number"
+        },
+        "shape": {
+          "enum": [
+            "round",
+            "oval",
+            "capsule",
+            "other"
+          ],
+          "title": "Shape",
+          "type": "string"
+        },
+        "embedding": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Embedding"
+        }
+      },
+      "required": [
+        "colour_lab",
+        "length_mm",
+        "width_mm",
+        "shape"
+      ],
+      "title": "Fingerprint",
+      "type": "object"
+    },
+    "Match": {
+      "description": "identify (Emily).",
+      "properties": {
+        "pill": {
+          "$ref": "#/$defs/Pill"
+        },
+        "medicine_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Medicine Id"
+        },
+        "score": {
+          "title": "Score",
+          "type": "number"
+        },
+        "certainty": {
+          "$ref": "#/$defs/Certainty"
+        }
+      },
+      "required": [
+        "pill",
+        "score",
+        "certainty"
+      ],
+      "title": "Match",
+      "type": "object"
+    },
+    "Pill": {
+      "description": "detect_pills (Alex): one pill found in one compartment crop.",
+      "properties": {
+        "cell": {
+          "title": "Cell",
+          "type": "integer"
+        },
+        "box": {
+          "$ref": "#/$defs/Box"
+        },
+        "confidence": {
+          "title": "Confidence",
+          "type": "number"
+        }
+      },
+      "required": [
+        "cell",
+        "box",
+        "confidence"
+      ],
+      "title": "Pill",
+      "type": "object"
+    },
+    "RefPhoto": {
+      "description": "A saved reference photo (FR-P-10). The crop file lives in the photo folder.",
+      "properties": {
+        "medicine_id": {
+          "title": "Medicine Id",
+          "type": "string"
+        },
+        "path": {
+          "title": "Path",
+          "type": "string"
+        },
+        "fingerprint": {
+          "$ref": "#/$defs/Fingerprint"
+        }
+      },
+      "required": [
+        "medicine_id",
+        "path",
+        "fingerprint"
+      ],
+      "title": "RefPhoto",
+      "type": "object"
+    }
+  },
+  "description": "match_fill (fill check, all 28) and check_tray (pre-dose, due cell) (Emily).",
+  "properties": {
+    "cells": {
+      "items": {
+        "$ref": "#/$defs/CellStatus"
+      },
+      "title": "Cells",
+      "type": "array"
+    },
+    "lookalike": {
+      "default": [],
+      "items": {
+        "maxItems": 2,
+        "minItems": 2,
+        "prefixItems": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "string"
+          }
+        ],
+        "type": "array"
+      },
+      "title": "Lookalike",
+      "type": "array"
+    },
+    "refs_to_save": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/RefPhoto"
+      },
+      "title": "Refs To Save",
+      "type": "array"
+    }
+  },
+  "required": [
+    "cells"
+  ],
+  "title": "FillResult",
+  "type": "object"
+}
