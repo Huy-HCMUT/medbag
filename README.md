@@ -106,7 +106,12 @@ medbag/
 └─ .env.example        copy to .env for the Gemini key (only to run the server with Gemini)
 ```
 
-Run the server: `uv run uvicorn medbag_server.main:app --reload --host 0.0.0.0 --port 8000`, then open http://localhost:8000/api/health.
+Run the server: `uv run uvicorn medbag_server.main:app --reload --host 0.0.0.0 --port 8000`, then open
+http://localhost:8000/docs to see and try every endpoint in the browser (it works with the fake answers already).
+
+Server files (Huy): `main.py` endpoints · `pipelines.py` the order of the calls · `store.py` reading and writing the
+database and photos · `db.py` the tables · `doses.py` which dose belongs to a time · `api_models.py` request and reply
+shapes and their checks · `images.py` phone photos.
 For Gemini, copy `.env.example` to `.env` and add a free key from Google AI Studio.
 
 ## Words used here

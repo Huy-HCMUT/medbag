@@ -34,18 +34,19 @@ def test_label_check():
 
 
 def test_fill_check():
-    assert isinstance(P.fill_check(PHOTO, SCHEDULE, None, MODELS), T.TrayResult)
+    out = P.fill_check(PHOTO, SCHEDULE, None, MODELS)
+    assert isinstance(out.result, T.TrayResult) and out.view.image.shape == (T.TRAY_H, T.TRAY_W, 3)
 
 
 def test_pre_dose_then_dose_check():
     pre = P.pre_dose_check(PHOTO, DOSE, SCHEDULE, [], MODELS)
     assert pre.view is not None and not pre.hold
-    result = P.dose_check(pre.view, PHOTO, DOSE, SCHEDULE, [], MODELS)
-    assert isinstance(result, T.CheckResult)
+    out = P.dose_check(pre.view, PHOTO, DOSE, SCHEDULE, [], MODELS)
+    assert isinstance(out.result, T.CheckResult) and out.view is not None
 
 
 def test_dose_check_without_before_photo():
-    assert P.dose_check(None, PHOTO, DOSE, SCHEDULE, [], MODELS).result == T.DoseResult.cannot_check
+    assert P.dose_check(None, PHOTO, DOSE, SCHEDULE, [], MODELS).result.result == T.DoseResult.cannot_check
 
 
 def test_alerts_and_ask():
@@ -55,9 +56,9 @@ def test_alerts_and_ask():
 
 def test_lid_closed_when_no_dose_is_open():
     pre = P.pre_dose_check(PHOTO, DOSE, SCHEDULE, [], MODELS)
-    changed = P.lid_check(pre.view, PHOTO)
+    changed = P.lid_check(pre.view, PHOTO).changed
     assert isinstance(changed, list) and all(0 <= c < 28 for c in changed)
-    assert P.lid_check(None, PHOTO) is None  # no before photo: cannot check
+    assert P.lid_check(None, PHOTO).changed is None  # no before photo: cannot check
 
 
 def test_unreadable_label_is_marked_by_the_server(monkeypatch):
