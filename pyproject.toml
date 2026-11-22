@@ -6,7 +6,10 @@ requires-python = ">=3.11"
 dependencies = ["medbag-server"]
 
 [dependency-groups]
-dev = ["pytest>=8"]
+dev = [
+    "httpx2>=2.16.2",
+    "pytest>=8",
+]
 
 [tool.uv.workspace]
 members = ["packages/*", "server"]

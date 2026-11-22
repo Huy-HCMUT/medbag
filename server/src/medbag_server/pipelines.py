@@ -58,6 +58,24 @@ class Models:
 
 
 @dataclass
+class FillOutcome:
+    view: TrayView  # saved, so the reference crops can be cut after the family confirms
+    result: TrayResult
+
+
+@dataclass
+class DoseOutcome:
+    view: Optional[TrayView]  # the straightened after photo (None = markers missing)
+    result: CheckResult
+
+
+@dataclass
+class LidOutcome:
+    view: Optional[TrayView]
+    changed: Optional[list[CellId]]  # None = cannot check (markers missing on a photo)
+
+
+@dataclass
 class PreDoseOutcome:
     view: Optional[TrayView]  # kept as the before photo until the next dose time
     result: Optional[TrayResult]  # None = not checked (markers missing): remind as usual
@@ -80,7 +98,7 @@ def label_check(photo: np.ndarray, models: Models) -> LabelResult:
 # 2 ------------------------------------------------------------------------------------------
 
 
-def fill_check(photo: np.ndarray, schedule: Schedule, refs: Optional[list[RefPhoto]], models: Models) -> Optional[TrayResult]:
+def fill_check(photo: np.ndarray, schedule: Schedule, refs: Optional[list[RefPhoto]], models: Models) -> Optional[FillOutcome]:
     """None = markers not found: ask for a new photo.
 
     After the family confirms the grid, the server cuts each result.refs_to_save[i].pill.box
@@ -90,7 +108,7 @@ def fill_check(photo: np.ndarray, schedule: Schedule, refs: Optional[list[RefPho
     if view is None:
         return None
     pills = detect_pills(view, models.yolo)
-    return match_fill(view, pills, schedule, refs)
+    return FillOutcome(view=view, result=match_fill(view, pills, schedule, refs))
 
 
 # 3 ------------------------------------------------------------------------------------------
@@ -107,19 +125,20 @@ def pre_dose_check(photo: np.ndarray, dose: DoseRef, schedule: Schedule, refs: l
 
 
 def dose_check(before: Optional[TrayView], after_photo: np.ndarray, dose: DoseRef, schedule: Schedule,
-               refs: list[RefPhoto], models: Models) -> CheckResult:
+               refs: list[RefPhoto], models: Models) -> DoseOutcome:
     """`before` = the view kept from pre_dose_check (or the last good one)."""
     after = rectify(after_photo)
     if before is None or after is None:  # set here, never by check_dose
-        return CheckResult(dose=dose, result=DoseResult.cannot_check, message_key="cannot_check")
+        return DoseOutcome(view=after, result=CheckResult(dose=dose, result=DoseResult.cannot_check,
+                                                          message_key="cannot_check"))
     changed = changed_cells(before, after)
     cells = set(changed) | {dose.cell}
     before_m = [identify(before, p, refs) for p in detect_pills(before, models.yolo) if p.cell in cells]
     after_m = [identify(after, p, refs) for p in detect_pills(after, models.yolo) if p.cell in cells]
-    return check_dose(dose, before_m, after_m, changed, schedule)
+    return DoseOutcome(view=after, result=check_dose(dose, before_m, after_m, changed, schedule))
 
 
-def lid_check(before: Optional[TrayView], after_photo: np.ndarray) -> Optional[list[CellId]]:
+def lid_check(before: Optional[TrayView], after_photo: np.ndarray) -> LidOutcome:
     """The lid closed while no dose is open (SP6 "Dose open? No", FR-C-13).
 
     Returns the compartments that changed (any change -> alert the family), or None when either
@@ -127,8 +146,8 @@ def lid_check(before: Optional[TrayView], after_photo: np.ndarray) -> Optional[l
     """
     after = rectify(after_photo)
     if before is None or after is None:
-        return None
-    return changed_cells(before, after)
+        return LidOutcome(view=after, changed=None)
+    return LidOutcome(view=after, changed=changed_cells(before, after))
 
 
 # 4, 5 ---------------------------------------------------------------------------------------
